@@ -345,15 +345,18 @@ console.log('Script executed');</textarea>
     document.getElementById('add-sphere').addEventListener('click', addSphere);
 
     // Explorer Panel
+    newName = obj.name
     function updateExplorer() {
       const list = document.getElementById('explorer-list');
       list.innerHTML = '';
       objects.forEach(obj => {
         const item = document.createElement('div');
         item.className = 'object-item' + (selectedObject && selectedObject.id === obj.id ? ' selected' : '');
-        item.textContent =  obj.item + ' #' + obj.id;
+        item.textContent =  newName + ' #' + obj.id;
         item.onclick = () => {
           selectedObject = obj;
+
+          
           
           updateExplorer();
           updateProperties();
