@@ -158,14 +158,14 @@
       propDiv.innerHTML = "Select an object to edit.";
       return;
     }
-
+<html>
     // Generate properties panel with rename functionality
     propDiv.innerHTML = `<div class="prop-field">
                           <label>Object Name</label>
                           <input type="text" id="prop-name" value="${selectedObject.name || 'Unnamed Object'}">
                         </div>
                         <button id="rename-object">Rename Object</button>`;
-
+    </html>
     // Attach event listener after UI elements are created
     document.getElementById("rename-object").addEventListener("click", () => {
       let newName = document.getElementById("prop-name").value.trim();
@@ -350,7 +350,7 @@ console.log('Script executed');</textarea>
       objects.forEach(obj => {
         const item = document.createElement('div');
         item.className = 'object-item' + (selectedObject && selectedObject.id === obj.id ? ' selected' : '');
-        item.textContent = obj.type + ' #' + obj.id;
+        item.textContent = newName + ' #' + obj.id;
         item.onclick = () => {
           selectedObject = obj;
           updateExplorer();
