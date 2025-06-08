@@ -353,6 +353,8 @@ console.log('Script executed');</textarea>
         item.textContent = newName + ' #' + obj.id;
         item.onclick = () => {
           selectedObject = obj;
+          if newName = "" then {
+            item.textContent = obj.item + obj.id; }
           updateExplorer();
           updateProperties();
         };
