@@ -1,218 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Orgena Studio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orgena Studio - Professional Game Editor</title>
 
-  <!-- Font Awesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- Monaco Editor CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.js"></script>
+  <!-- FontAwesome Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    integrity="sha512-nxqTRM1dR6CZp4p1m0X5Ku4w/mzXTtZVeI6x46N9MQ2wyK7DUtkJ5jFHrKPsYCFx3RVjf3TkAqUl6PY7evQXbA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
 
   <style>
     :root {
-      --bg: #ffffff;
-      --text: #111111;
-      --panel-bg: #f4f4f4;
-      --border: #ccc;
+      /* Light mode colors */
+      --color-bg: #fefefe;
+      --color-text: #1a1a1a;
+      --color-panel-bg: #f7f7f7;
+      --color-border: #d0d0d0;
+      --color-primary: #3b82f6;
+      --color-accent: #2563eb;
+      --color-hover: #e0e7ff;
+      --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     }
 
     [data-theme="dark"] {
-      --bg: #1e1e1e;
-      --text: #eaeaea;
-      --panel-bg: #2b2b2b;
-      --border: #444;
+      --color-bg: #121212;
+      --color-text: #e0e0e0;
+      --color-panel-bg: #1e1e1e;
+      --color-border: #333;
+      --color-primary: #3b82f6;
+      --color-accent: #60a5fa;
+      --color-hover: #2c2f45;
+    }
+
+    /* Reset */
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      font-family: sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-family);
       height: 100vh;
       display: grid;
-      grid-template-rows: 40px 1fr;
-      background-color: var(--bg);
-      color: var(--text);
+      grid-template-rows: 48px 1fr;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    header {
-      background: var(--panel-bg);
-      border-bottom: 1px solid var(--border);
-      padding: 0 10px;
+    /* Toolbar */
+    header[role="banner"] {
+      background-color: var(--color-panel-bg);
+      border-bottom: 1px solid var(--color-border);
+      padding: 0 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 1rem;
+      user-select: none;
     }
 
-    header button {
-      margin-left: 8px;
+    header h1 {
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.05em;
+      margin: 0;
+      user-select: text;
     }
 
-    main {
+    /* Toolbar buttons */
+    .toolbar-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .toolbar-actions button {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: transparent;
+      border: none;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-text);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .toolbar-actions button:hover,
+    .toolbar-actions button:focus-visible {
+      background-color: var(--color-hover);
+      outline: none;
+    }
+
+    /* Theme toggle button */
+    #btn-theme-toggle {
+      font-size: 1.1rem;
+    }
+
+    /* Main app layout */
+    main[role="main"] {
       display: grid;
-      grid-template-columns: 200px 1fr 250px;
+      grid-template-columns: 280px 1fr 320px;
+      grid-template-rows: 1fr;
       height: 100%;
+      background-color: var(--color-bg);
+      gap: 0.75rem;
+      padding: 0.75rem;
     }
 
-    aside, section, .properties {
-      border: 1px solid var(--border);
-      background: var(--panel-bg);
-      padding: 10px;
-      overflow: auto;
-    }
-
-    section {
+    /* Sidebar (Explorer + Assets) */
+    aside.sidebar {
+      background-color: var(--color-panel-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      overflow-y: auto;
+      padding: 1rem;
+      user-select: text;
     }
 
-    h2 {
+    aside.sidebar h2 {
       margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 0.25rem;
+      user-select: text;
     }
 
-    ul {
+    aside.sidebar section {
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    aside.sidebar ul {
       list-style: none;
       padding: 0;
+      margin: 0;
     }
 
-    ul li {
-      margin: 5px 0;
+    aside.sidebar li {
+      padding: 0.3rem 0.5rem;
+      cursor: pointer;
       display: flex;
       align-items: center;
+      gap: 0.6rem;
+      border-radius: 4px;
+      transition: background-color 0.15s ease;
+      user-select: text;
     }
 
-    ul li i {
-      margin-right: 8px;
+    aside.sidebar li:hover,
+    aside.sidebar li:focus-visible {
+      background-color: var(--color-hover);
+      outline: none;
     }
 
-    textarea {
+    aside.sidebar li i {
+      color: var(--color-primary);
+      min-width: 18px;
+      text-align: center;
+    }
+
+    /* Viewport section */
+    section.viewport {
+      background-color: var(--color-panel-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      user-select: none;
+    }
+
+    section.viewport h2 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.2rem;
+      user-select: text;
+    }
+
+    #viewport-container {
+      flex-grow: 1;
+      margin-top: 0.75rem;
+      background-color: #000;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      min-height: 400px;
+      box-shadow: inset 0 0 12px rgba(255 255 255 / 0.05);
+    }
+
+    /* Properties + Script panel */
+    aside.properties {
+      background-color: var(--color-panel-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      overflow-y: auto;
+      user-select: text;
+    }
+
+    aside.properties h2 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.2rem;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 0.3rem;
+      user-select: text;
+    }
+
+    /* Properties form */
+    form.properties-form {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    form.properties-form label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+      user-select: text;
+    }
+
+    form.properties-form input[type="text"],
+    form.properties-form input[type="color"] {
+      padding: 0.4rem 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      transition: border-color 0.2s ease;
       width: 100%;
-      height: 150px;
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
     }
 
-    input[type="text"], input[type="color"] {
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
+    form.properties-form input[type="text"]:focus,
+    form.properties-form input[type="color"]:focus {
+      border-color: var(--color-accent);
+      outline: none;
+      box-shadow: 0 0 6px var(--color-accent);
     }
 
-    #viewport {
-      width: 100%;
-      height: 400px;
-      background: #000;
+    /* Script editor container */
+    #script-editor {
+      flex-grow: 1;
+      margin-top: 1rem;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background-color: var(--color-bg);
+      overflow: hidden;
+      min-height: 250px;
+      font-family: Consolas, Monaco, 'Courier New', monospace;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--color-panel-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--color-accent);
+      border-radius: 6px;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 1000px) {
+      main[role="main"] {
+        grid-template-columns: 200px 1fr;
+        grid-template-rows: auto auto;
+        grid-gap: 1rem;
+        height: auto;
+      }
+
+      aside.properties {
+        grid-column: 1 / -1;
+        height: 350px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      header[role="banner"] {
+        flex-wrap: wrap;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+      }
     }
   </style>
 </head>
 <body data-theme="light">
-
   <!-- Toolbar -->
-  <header>
-    <div><strong>Orgena Studio</strong></div>
-    <div>
-      <button><i class="fas fa-file"></i> New</button>
-      <button><i class="fas fa-folder-open"></i> Open</button>
-      <button><i class="fas fa-save"></i> Save</button>
-      <button><i class="fas fa-play"></i> Play</button>
-      <button onclick="toggleTheme()" title="Toggle Theme">
-        <i class="fas fa-moon" id="theme-icon"></i>
+  <header role="banner" aria-label="Main toolbar">
+    <h1 id="app-title">Orgena Studio</h1>
+    <nav class="toolbar-actions" aria-label="Application actions">
+      <button type="button" aria-label="Create new project" title="New Project">
+        <i class="fa-solid fa-file"></i> New
       </button>
-    </div>
+      <button type="button" aria-label="Open existing project" title="Open Project">
+        <i class="fa-solid fa-folder-open"></i> Open
+      </button>
+      <button type="button" aria-label="Save current project" title="Save Project">
+        <i class="fa-solid fa-floppy-disk"></i> Save
+      </button>
+      <button type="button" aria-label="Play / Run project" title="Play Project">
+        <i class="fa-solid fa-play"></i> Play
+      </button>
+      <button
+        type="button"
+        id="btn-theme-toggle"
+        aria-label="Toggle dark or light mode"
+        title="Toggle Dark/Light Mode"
+      >
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </nav>
   </header>
 
-  <!-- Main Layout -->
-  <main>
-    <!-- Explorer/Assets -->
-    <aside>
-      <h2>Explorer</h2>
-      <ul>
-        <li><i class="fas fa-box"></i> Workspace</li>
-        <li><i class="fas fa-code"></i> Script1</li>
-        <li><i class="fas fa-tree"></i> Tree</li>
-      </ul>
+  <!-- Main application area -->
+  <main role="main" aria-label="Orgena Studio main content area">
+    <!-- Left Sidebar: Explorer + Assets -->
+    <aside class="sidebar" aria-label="Explorer and Assets panel" tabindex="0">
+      <section aria-labelledby="explorer-title">
+        <h2 id="explorer-title">Explorer</h2>
+        <ul role="list" tabindex="0" aria-label="List of project objects">
+          <li tabindex="0"><i class="fa-solid fa-cubes"></i> Workspace</li>
+          <li tabindex="0"><i class="fa-solid fa-code"></i> Script1</li>
+          <li tabindex="0"><i class="fa-solid fa-tree"></i> Tree</li>
+        </ul>
+      </section>
 
-      <h2>Assets</h2>
-      <ul>
-        <li><i class="fas fa-cube"></i> Cube</li>
-        <li><i class="fas fa-circle"></i> Sphere</li>
-        <li><i class="fas fa-folder"></i> Models</li>
-      </ul>
+      <section aria-labelledby="assets-title" style="margin-top: 2rem;">
+        <h2 id="assets-title">Assets</h2>
+        <ul role="list" tabindex="0" aria-label="List of assets">
+          <li tabindex="0"><i class="fa-solid fa-cube"></i> Cube</li>
+          <li tabindex="0"><i class="fa-solid fa-sphere"></i> Sphere</li>
+          <li tabindex="0"><i class="fa-solid fa-folder"></i> Models</li>
+        </ul>
+      </section>
     </aside>
 
-    <!-- Viewport -->
-    <section>
+    <!-- Center: 3D Viewport -->
+    <section class="viewport" aria-label="3D viewport and scene view">
       <h2>Scene Viewport</h2>
-      <div id="viewport"></div>
+      <div id="viewport-container" aria-live="polite" aria-atomic="true" role="region" aria-label="3D scene viewport">
+        <!-- Three.js canvas will be injected here -->
+      </div>
     </section>
 
-    <!-- Properties + Script -->
-    <div class="properties">
+    <!-- Right Sidebar: Properties + Script Editor -->
+    <aside class="properties" aria-label="Properties and scripting panel" tabindex="0">
       <h2>Properties</h2>
-      <p>Name: <input type="text" value="Cube" /></p>
-      <p>Position: <input type="text" value="0, 1, 0" /></p>
-      <p>Color: <input type="color" value="#ff0000" /></p>
 
-      <h2>Script</h2>
-      <div id="editor" style="height: 200px;"></div>
-    </div>
+      <form class="properties-form" aria-label="Selected object properties">
+        <div>
+          <label for="prop-name">Name</label>
+          <input
+            type="text"
+            id="prop-name"
+            name="prop-name"
+            autocomplete="off"
+            value="Cube"
+            aria-describedby="prop-name-desc"
+          />
+          <small id="prop-name-desc" class="sr-only">Set the name of the selected object</small>
+        </div>
+
+        <div>
+          <label for="prop-position">Position (x, y, z)</label>
+          <input
+            type="text"
+            id="prop-position"
+            name="prop-position"
+            autocomplete="off"
+            value="0, 1, 0"
+            aria-describedby="prop-position-desc"
+          />
+          <small id="prop-position-desc" class="sr-only">Set the position coordinates</small>
+        </div>
+
+        <div>
+          <label for="prop-color">Color</label>
+          <input
+            type="color"
+            id="prop-color"
+            name="prop-color"
+            value="#ff0000"
+            aria-describedby="prop-color-desc"
+          />
+          <small id="prop-color-desc" class="sr-only">Set the object color</small>
+        </div>
+      </form>
+
+      <h2 style="margin-top: 1.5rem;">Script</h2>
+      <div id="script-editor" role="textbox" aria-multiline="true" aria-label="Script editor">
+        <!-- Monaco editor or other editor goes here -->
+      </div>
+    </aside>
   </main>
 
   <script>
-    // Theme Toggle Function
-    function toggleTheme() {
-      const body = document.body;
-      const current = body.getAttribute("data-theme");
-      const icon = document.getElementById("theme-icon");
+    // Theme toggle button logic
+    const bodyEl = document.body;
+    const btnTheme = document.getElementById("btn-theme-toggle");
+    const icon = btnTheme.querySelector("i");
 
-      if (current === "light") {
-        body.setAttribute("data-theme", "dark");
-        icon.classList.remove("fa-moon");
-        icon.classList.add("fa-sun");
+    btnTheme.addEventListener("click", () => {
+      const isLight = bodyEl.getAttribute("data-theme") === "light";
+      if (isLight) {
+        bodyEl.setAttribute("data-theme", "dark");
+        icon.classList.replace("fa-moon", "fa-sun");
       } else {
-        body.setAttribute("data-theme", "light");
-        icon.classList.remove("fa-sun");
-        icon.classList.add("fa-moon");
+        bodyEl.setAttribute("data-theme", "light");
+        icon.classList.replace("fa-sun", "fa-moon");
       }
-    }
-
-    // Initialize Monaco Editor
-    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
-    require(['vs/editor/editor.main'], function () {
-      monaco.editor.create(document.getElementById('editor'), {
-        value: 'console.log("Hello, Orgena!");',
-        language: 'javascript',
-        theme: 'vs-dark',
-        automaticLayout: true
-      });
     });
-
-    // Initialize Three.js 3D Viewport
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('viewport').appendChild(renderer.domElement);
-
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    camera.position.z = 5;
-
-    function animate() {
-      requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      renderer.render(scene, camera);
-    }
-    animate();
   </script>
-
 </body>
 </html>
