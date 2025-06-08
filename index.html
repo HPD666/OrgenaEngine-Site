@@ -138,6 +138,41 @@
   <input type="text" id="prop-name" value="Unnamed Object">
 </div>
 <button id="rename-object">Rename Object</button>
+      <script>
+  function updateProperties() {
+    const propDiv = document.getElementById('properties-content');
+    if (!selectedObject) {
+      propDiv.innerHTML = 'Select an object to edit.';
+      return;
+    }
+    
+    propDiv.innerHTML = `<label>Object Name</label>
+                         <input type="text" id="prop-name" value="${selectedObject.name || 'Unnamed Object'}">
+                         <button id="rename-object">Rename Object</button>`;
+
+    document.getElementById('rename-object').addEventListener('click', () => {
+      selectedObject.name = document.getElementById('prop-name').value;
+      updateExplorer();
+    });
+  }
+
+  function updateExplorer() {
+    const list = document.getElementById('explorer-list');
+    list.innerHTML = '';
+    objects.forEach(obj => {
+      const item = document.createElement('div');
+      item.className = 'object-item' + (selectedObject && selectedObject.id === obj.id ? ' selected' : '');
+      item.textContent = obj.name || obj.type + ' #' + obj.id;
+      item.onclick = () => {
+        selectedObject = obj;
+        updateExplorer();
+        updateProperties();
+      };
+      list.appendChild(item);
+    });
+  }
+</script>
+
     </div>
     <div id="script">
       <textarea id="script-editor">// Write your script here...
