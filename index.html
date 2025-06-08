@@ -139,8 +139,11 @@
 </div>
 <button id="rename-object">Rename Object</button>
 
-    <script>
-  function updateProperties() {
+    
+      <script>
+        
+  function updateExplorer() {
+      function updateProperties() {
     const propDiv = document.getElementById("properties-content");
     if (!selectedObject) {
       propDiv.innerHTML = "Select an object to edit.";
@@ -168,12 +171,6 @@
       let newName = document.getElementById("prop-name").value.trim();
       if (newName) {
         selectedObject.name = newName;
-        updateExplorer();
-      }
-    });
-  }
-
-  function updateExplorer() {
     const list = document.getElementById("explorer-list");
     list.innerHTML = "";
     objects.forEach(obj => {
