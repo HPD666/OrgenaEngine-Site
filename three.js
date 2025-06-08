@@ -1,20 +1,25 @@
-// orgena-studio.js
+// Orgena Studio - Full Working JavaScript
 
 (() => {
-  // === Setup Three.js basics ===
   const container = document.getElementById('viewport');
   const scene = new THREE.Scene();
-
-  const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(5, 5, 7);
+  const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(5, 5, 10);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setClearColor(0x121212);
-  renderer.shadowMap.enabled = true;
   container.appendChild(renderer.domElement);
 
-  // === Controls ===
+  // Lighting
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+  hemiLight.position.set(0, 20, 0);
+  scene.add(hemiLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(3, 10, 10);
+  scene.add(dirLight);
+
+  // Controls
   const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
   orbitControls.enableDamping = true;
   orbitControls.dampingFactor = 0.05;
@@ -22,257 +27,216 @@
   const transformControls = new THREE.TransformControls(camera, renderer.domElement);
   scene.add(transformControls);
 
-  // === Helpers ===
-  const gridHelper = new THREE.GridHelper(20, 20);
-  scene.add(gridHelper);
+  // Raycaster for picking
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
 
-  const axesHelper = new THREE.AxesHelper(5);
-  scene.add(axesHelper);
+  // Data
+  const objects = [];
+  let selectedObject = null;
 
-  // === Lights ===
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambientLight);
+  // UI Elements
+  const btnAddObject = document.getElementById('btnAddObject');
+  const primitiveType = document.getElementById('primitiveType');
+  const objectList = document.getElementById('objectList');
+  const btnUpdateProperties = document.getElementById('btnUpdateProperties');
+  const btnSaveProject = document.getElementById('btnSaveProject');
+  const btnLoadProject = document.getElementById('btnLoadProject');
+  const btnToggleMode = document.getElementById('btnToggleMode');
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  directionalLight.position.set(5, 10, 7);
-  directionalLight.castShadow = true;
-  directionalLight.shadow.mapSize.width = 2048;
-  directionalLight.shadow.mapSize.height = 2048;
-  scene.add(directionalLight);
-
-  // === DOM elements ===
-  const objectListEl = document.getElementById('objectList');
   const propName = document.getElementById('propName');
   const propPosition = document.getElementById('propPosition');
   const propRotation = document.getElementById('propRotation');
   const propScale = document.getElementById('propScale');
   const propColor = document.getElementById('propColor');
   const propScript = document.getElementById('propScript');
-  const btnAddObject = document.getElementById('btnAddObject');
-  const btnUpdateProperties = document.getElementById('btnUpdateProperties');
-  const btnSaveProject = document.getElementById('btnSaveProject');
-  const btnLoadProject = document.getElementById('btnLoadProject');
-  const primitiveTypeSelector = document.getElementById('primitiveType');
-  const btnToggleMode = document.getElementById('btnToggleMode');
 
-  // === Data storage ===
-  const objects = {};
-  let selectedObjectId = null;
-  let objectIdCounter = 0;
-
-  // === Generate unique ID ===
-  function generateId() {
-    objectIdCounter++;
-    return `obj_${objectIdCounter}`;
-  }
-
-  // === Create primitives ===
-  function createPrimitive(type, color = 0x999999) {
+  // Helpers
+  function createPrimitive(type) {
     let geometry;
     switch (type) {
       case 'cube':
         geometry = new THREE.BoxGeometry(1, 1, 1);
         break;
       case 'sphere':
-        geometry = new THREE.SphereGeometry(0.6, 32, 32);
+        geometry = new THREE.SphereGeometry(0.5, 32, 32);
         break;
       case 'cylinder':
-        geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32);
+        geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
         break;
       case 'plane':
-        geometry = new THREE.PlaneGeometry(1.2, 1.2);
+        geometry = new THREE.PlaneGeometry(1, 1);
         break;
       default:
         geometry = new THREE.BoxGeometry(1, 1, 1);
     }
-    const material = new THREE.MeshStandardMaterial({ color });
+    const material = new THREE.MeshStandardMaterial({ color: 0x156289, emissive: 0x072534, flatShading: false });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.name = `${type[0].toUpperCase() + type.slice(1)} ${objects.length + 1}`;
+    mesh.userData.script = ''; // Empty script string
     return mesh;
   }
 
-  // === Add object ===
-  function addObject(type) {
-    const id = generateId();
-    const mesh = createPrimitive(type, 0x999999);
-    mesh.position.set(0, 0.6, 0);
-    mesh.name = `${type.charAt(0).toUpperCase() + type.slice(1)} ${objectIdCounter}`;
-    scene.add(mesh);
-
-    objects[id] = {
-      id,
-      mesh,
-      type,
-      script: `-- Lua script for ${mesh.name}\nfunction update(dt)\n  -- dt: delta time\nend`
-    };
-
-    addObjectToExplorer(id);
-    selectObject(id);
-  }
-
-  // === Add object to explorer UI ===
-  function addObjectToExplorer(id) {
-    const obj = objects[id];
-    const li = document.createElement('li');
-    li.textContent = obj.mesh.name;
-    li.id = id;
-    li.tabIndex = 0;
-    li.setAttribute('role', 'option');
-    li.addEventListener('click', () => selectObject(id));
-    li.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selectObject(id);
+  function updateObjectList() {
+    objectList.innerHTML = '';
+    objects.forEach((obj, idx) => {
+      const li = document.createElement('li');
+      li.textContent = obj.name;
+      li.tabIndex = 0;
+      if (obj === selectedObject) {
+        li.classList.add('selected');
       }
+      li.addEventListener('click', () => selectObject(obj));
+      objectList.appendChild(li);
     });
-    objectListEl.appendChild(li);
   }
 
-  // === Refresh explorer UI ===
-  function refreshExplorer() {
-    objectListEl.innerHTML = '';
-    Object.keys(objects).forEach(id => addObjectToExplorer(id));
+  function selectObject(obj) {
+    if (selectedObject === obj) return;
+    selectedObject = obj;
+    transformControls.attach(obj);
+    updateObjectList();
+    loadProperties(obj);
   }
 
-  // === Select object ===
-  function selectObject(id) {
-    if (!objects[id]) return;
-    selectedObjectId = id;
-
-    // Highlight selected
-    for (let li of objectListEl.children) {
-      li.classList.toggle('selected', li.id === id);
-      li.setAttribute('aria-selected', li.id === id ? 'true' : 'false');
-    }
-
-    const obj = objects[id];
-    propName.value = obj.mesh.name;
-    propPosition.value = `${obj.mesh.position.x.toFixed(2)}, ${obj.mesh.position.y.toFixed(2)}, ${obj.mesh.position.z.toFixed(2)}`;
-    propRotation.value = `${THREE.MathUtils.radToDeg(obj.mesh.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.z).toFixed(1)}`;
-    propScale.value = `${obj.mesh.scale.x.toFixed(2)}, ${obj.mesh.scale.y.toFixed(2)}, ${obj.mesh.scale.z.toFixed(2)}`;
-    propColor.value = "#" + obj.mesh.material.color.getHexString();
-    propScript.value = obj.script;
-
-    transformControls.attach(obj.mesh);
+  function deselectObject() {
+    selectedObject = null;
+    transformControls.detach();
+    updateObjectList();
+    clearProperties();
   }
 
-  // === Update selected object properties ===
-  function updateSelectedObject() {
-    if (!selectedObjectId) return;
-    const obj = objects[selectedObjectId];
+  function loadProperties(obj) {
+    if (!obj) return clearProperties();
+    propName.value = obj.name;
+    propPosition.value = `${obj.position.x.toFixed(2)}, ${obj.position.y.toFixed(2)}, ${obj.position.z.toFixed(2)}`;
+    propRotation.value = `${THREE.MathUtils.radToDeg(obj.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.rotation.z).toFixed(1)}`;
+    propScale.value = `${obj.scale.x.toFixed(2)}, ${obj.scale.y.toFixed(2)}, ${obj.scale.z.toFixed(2)}`;
+    propColor.value = '#' + obj.material.color.getHexString();
+    propScript.value = obj.userData.script || '';
+  }
 
+  function clearProperties() {
+    propName.value = '';
+    propPosition.value = '';
+    propRotation.value = '';
+    propScale.value = '';
+    propColor.value = '#ffffff';
+    propScript.value = '';
+  }
+
+  function updateProperties() {
+    if (!selectedObject) return alert('No object selected');
     // Name
-    const newName = propName.value.trim();
-    if (newName) {
-      obj.mesh.name = newName;
-      for (let li of objectListEl.children) {
-        if (li.id === selectedObjectId) li.textContent = newName;
-      }
-    }
-
+    selectedObject.name = propName.value.trim() || selectedObject.name;
     // Position
-    const posParts = propPosition.value.split(',').map(s => parseFloat(s.trim()));
-    if (posParts.length === 3 && posParts.every(n => !isNaN(n))) {
-      obj.mesh.position.set(posParts[0], posParts[1], posParts[2]);
+    const posVals = propPosition.value.split(',').map(v => parseFloat(v.trim()));
+    if (posVals.length === 3 && posVals.every(v => !isNaN(v))) {
+      selectedObject.position.set(...posVals);
     }
-
-    // Rotation (deg -> rad)
-    const rotParts = propRotation.value.split(',').map(s => THREE.MathUtils.degToRad(parseFloat(s.trim())));
-    if (rotParts.length === 3 && rotParts.every(n => !isNaN(n))) {
-      obj.mesh.rotation.set(rotParts[0], rotParts[1], rotParts[2]);
+    // Rotation (degrees)
+    const rotVals = propRotation.value.split(',').map(v => parseFloat(v.trim()));
+    if (rotVals.length === 3 && rotVals.every(v => !isNaN(v))) {
+      selectedObject.rotation.set(
+        THREE.MathUtils.degToRad(rotVals[0]),
+        THREE.MathUtils.degToRad(rotVals[1]),
+        THREE.MathUtils.degToRad(rotVals[2])
+      );
     }
-
     // Scale
-    const scaleParts = propScale.value.split(',').map(s => parseFloat(s.trim()));
-    if (scaleParts.length === 3 && scaleParts.every(n => !isNaN(n))) {
-      obj.mesh.scale.set(scaleParts[0], scaleParts[1], scaleParts[2]);
+    const scaleVals = propScale.value.split(',').map(v => parseFloat(v.trim()));
+    if (scaleVals.length === 3 && scaleVals.every(v => !isNaN(v))) {
+      selectedObject.scale.set(...scaleVals);
     }
-
     // Color
-    try {
-      obj.mesh.material.color.set(propColor.value);
-    } catch { }
-
-    // Script
-    obj.script = propScript.value;
-  }
-
-  // === Save project ===
-  function saveProject() {
-    const data = {
-      objects: Object.values(objects).map(obj => ({
-        id: obj.id,
-        name: obj.mesh.name,
-        type: obj.type,
-        position: obj.mesh.position.toArray(),
-        rotation: [obj.mesh.rotation.x, obj.mesh.rotation.y, obj.mesh.rotation.z],
-        scale: obj.mesh.scale.toArray(),
-        color: "#" + obj.mesh.material.color.getHexString(),
-        script: obj.script,
-      })),
-    };
-    localStorage.setItem('orgena_project', JSON.stringify(data));
-    alert('Project saved locally.');
-  }
-
-  // === Load project ===
-  function loadProject() {
-    const dataStr = localStorage.getItem('orgena_project');
-    if (!dataStr) {
-      alert('No saved project found.');
-      return;
+    if (/^#[0-9A-Fa-f]{6}$/.test(propColor.value)) {
+      selectedObject.material.color.set(propColor.value);
     }
+    // Script
+    selectedObject.userData.script = propScript.value;
+
+    updateObjectList();
+  }
+
+  function addObject() {
+    const type = primitiveType.value;
+    const newObj = createPrimitive(type);
+    newObj.position.set(0, 0.5, 0);
+    scene.add(newObj);
+    objects.push(newObj);
+    selectObject(newObj);
+  }
+
+  function saveProject() {
+    const data = objects.map(obj => ({
+      name: obj.name,
+      type: obj.geometry.type.replace('BufferGeometry', '').toLowerCase() || 'unknown',
+      position: obj.position.toArray(),
+      rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
+      scale: obj.scale.toArray(),
+      color: '#' + obj.material.color.getHexString(),
+      script: obj.userData.script || '',
+    }));
+    localStorage.setItem('orgenaStudioProject', JSON.stringify(data));
+    alert('Project saved!');
+  }
+
+  function loadProject() {
+    const dataRaw = localStorage.getItem('orgenaStudioProject');
+    if (!dataRaw) return alert('No saved project found!');
     try {
-      const data = JSON.parse(dataStr);
-
-      // Clear scene and objects
-      Object.values(objects).forEach(o => scene.remove(o.mesh));
-      Object.keys(objects).forEach(k => delete objects[k]);
-      objectIdCounter = 0;
-      objectListEl.innerHTML = '';
-
-      // Rebuild scene
-      data.objects.forEach(objData => {
-        const mesh = createPrimitive(objData.type, parseInt(objData.color.slice(1), 16));
-        mesh.position.fromArray(objData.position);
-        mesh.rotation.set(...objData.rotation);
-        mesh.scale.fromArray(objData.scale);
-        mesh.name = objData.name;
-        scene.add(mesh);
-
-        objects[objData.id] = {
-          id: objData.id,
-          mesh,
-          type: objData.type,
-          script: objData.script,
-        };
-
-        // Keep track of highest ID number
-        const numId = parseInt(objData.id.split('_')[1]);
-        if (numId > objectIdCounter) objectIdCounter = numId;
+      const data = JSON.parse(dataRaw);
+      // Clear current objects
+      objects.forEach(o => scene.remove(o));
+      objects.length = 0;
+      deselectObject();
+      data.forEach(item => {
+        const newObj = createPrimitive(item.type === 'box' ? 'cube' : item.type);
+        newObj.name = item.name;
+        newObj.position.fromArray(item.position);
+        newObj.rotation.set(...item.rotation);
+        newObj.scale.fromArray(item.scale);
+        newObj.material.color.set(item.color);
+        newObj.userData.script = item.script || '';
+        scene.add(newObj);
+        objects.push(newObj);
       });
-      refreshExplorer();
-      if (data.objects.length) selectObject(data.objects[0].id);
-
-      alert('Project loaded.');
+      updateObjectList();
+      alert('Project loaded!');
     } catch (e) {
       alert('Failed to load project: ' + e.message);
     }
   }
 
-  // === Handle window resize ===
-  window.addEventListener('resize', () => {
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+  // Dark/light mode toggle
+  let darkMode = true;
+  function toggleDarkMode() {
+    darkMode = !darkMode;
+    document.body.style.background = darkMode ? '#121212' : '#f0f0f0';
+    document.body.style.color = darkMode ? 'white' : 'black';
+    document.getElementById('sidebar').style.background = darkMode ? '#222' : '#ddd';
+
+    // Adjust renderer clear color
+    renderer.setClearColor(darkMode ? 0x121212 : 0xf0f0f0, 1);
+  }
+
+  // Event listeners
+
+  btnAddObject.addEventListener('click', addObject);
+  btnUpdateProperties.addEventListener('click', updateProperties);
+  btnSaveProject.addEventListener('click', saveProject);
+  btnLoadProject.addEventListener('click', loadProject);
+  btnToggleMode.addEventListener('click', toggleDarkMode);
+
+  transformControls.addEventListener('dragging-changed', function(event) {
+    orbitControls.enabled = !event.value;
   });
 
-  // === Keyboard control for transform mode switching ===
-  window.addEventListener('keydown', e => {
-    if (!transformControls.object) return;
-    switch (e.key.toLowerCase()) {
-      case 'g': // translate
+  // Keyboard shortcuts for transform mode
+  window.addEventListener('keydown', (event) => {
+    if (!selectedObject) return;
+    switch (event.key.toLowerCase()) {
+      case 'g': // move
         transformControls.setMode('translate');
         break;
       case 'r': // rotate
@@ -281,60 +245,64 @@
       case 's': // scale
         transformControls.setMode('scale');
         break;
-      case 'escape': // deselect
-        transformControls.detach();
-        selectedObjectId = null;
-        for (let li of objectListEl.children) {
-          li.classList.remove('selected');
-          li.setAttribute('aria-selected', 'false');
-        }
+      case 'delete':
+      case 'backspace':
+        // Delete selected object
+        scene.remove(selectedObject);
+        const idx = objects.indexOf(selectedObject);
+        if (idx !== -1) objects.splice(idx, 1);
+        deselectObject();
+        updateObjectList();
         break;
     }
   });
 
-  // Prevent orbitControls when dragging transformControls
-  transformControls.addEventListener('dragging-changed', event => {
-    orbitControls.enabled = !event.value;
+  // Resize handling
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
   });
 
-  // === Dark/Light mode toggle ===
-  btnToggleMode.onclick = () => {
-    document.body.classList.toggle('light');
-    if (document.body.classList.contains('light')) {
-      renderer.setClearColor(0xf0f0f0);
+  // Click to select objects
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    if (transformControls.dragging) return; // ignore if dragging transform
+
+    // Calculate mouse pos normalized
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(objects);
+    if (intersects.length > 0) {
+      selectObject(intersects[0].object);
     } else {
-      renderer.setClearColor(0x121212);
+      deselectObject();
     }
-  };
+  });
 
-  // === Button events ===
-  btnAddObject.onclick = () => {
-    addObject(primitiveTypeSelector.value);
-  };
-
-  btnUpdateProperties.onclick = () => {
-    updateSelectedObject();
-  };
-
-  btnSaveProject.onclick = () => {
-    updateSelectedObject();
-    saveProject();
-  };
-
-  btnLoadProject.onclick = () => {
-    loadProject();
-  };
-
-  // === Animation loop ===
+  // Animate/render loop
   function animate() {
     requestAnimationFrame(animate);
     orbitControls.update();
-    transformControls.update();
+
+    // Run user scripts attached to objects
+    const time = performance.now() / 1000;
+    objects.forEach(obj => {
+      if (obj.userData.script && obj.userData.script.trim() !== '') {
+        try {
+          const fn = new Function('obj', 'time', obj.userData.script);
+          fn(obj, time);
+        } catch (e) {
+          // silently fail or optionally show error
+        }
+      }
+    });
+
     renderer.render(scene, camera);
   }
+
   animate();
-
-  // === Initialize with one cube ===
-  addObject('cube');
-
+  toggleDarkMode(); // set initial mode & colors
 })();
