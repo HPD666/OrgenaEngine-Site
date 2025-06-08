@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Main Repo -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Orgena Studio</title>
@@ -70,7 +69,7 @@
     }
 
     input:checked + .slider {
-      background-color: #333;
+      background-color: #666;
     }
 
     input:checked + .slider:before {
@@ -102,14 +101,16 @@
 <body>
 
   <div class="toggle-container">
-    <!-- Professional Sun Icon (Light Mode) -->
+    <!-- Sun Icon -->
     <svg class="icon icon-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M12 4V2M12 22v-2M4.22 4.22l1.42 1.42M18.36 18.36l-1.42-1.42M2 12H4m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l-1.42 1.42M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M12 4V2M12 22v-2M4.22 4.22l1.42 1.42M18.36 18.36l-1.42-1.42M2 12H4m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l-1.42 1.42M12 8a4 4 0 100 8 4 4 0 000-8z"
+        stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
 
-    <!-- Professional Moon Icon (Dark Mode) -->
+    <!-- Moon Icon -->
     <svg class="icon icon-dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"
+        stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
 
     <label class="switch">
@@ -118,13 +119,20 @@
     </label>
   </div>
 
-  
   <script>
     const toggle = document.getElementById('themeToggle');
     const body = document.body;
 
+    // Apply stored theme
+    if (localStorage.getItem('theme') === 'dark') {
+      body.classList.add('dark-mode');
+      toggle.checked = true;
+    }
+
     toggle.addEventListener('change', () => {
       body.classList.toggle('dark-mode');
+      const theme = body.classList.contains('dark-mode') ? 'dark' : 'light';
+      localStorage.setItem('theme', theme);
     });
   </script>
 
