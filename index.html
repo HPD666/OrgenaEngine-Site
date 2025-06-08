@@ -1,139 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
-  <!-- Main Studio -->
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Orgena Studio</title>
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Monaco Editor CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.js"></script>
+
   <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111111;
+      --panel-bg: #f4f4f4;
+      --border: #ccc;
+    }
+
+    [data-theme="dark"] {
+      --bg: #1e1e1e;
+      --text: #eaeaea;
+      --panel-bg: #2b2b2b;
+      --border: #444;
+    }
+
     body {
       margin: 0;
-      padding: 0;
-      background-color: white;
-      color: black;
-      font-family: Arial, sans-serif;
-      transition: background-color 0.3s, color 0.3s;
+      font-family: sans-serif;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 40px 1fr;
+      background-color: var(--bg);
+      color: var(--text);
     }
 
-    .toggle-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
+    header {
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 10px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
     }
 
-    .icon {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
-      transition: opacity 0.3s ease;
+    header button {
+      margin-left: 8px;
     }
 
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
+    main {
+      display: grid;
+      grid-template-columns: 200px 1fr 250px;
+      height: 100%;
     }
 
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
+    aside, section, .properties {
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      padding: 10px;
+      overflow: auto;
     }
 
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 34px;
+    section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    } 
-    input:checked + .slider {
-      background-color: #666;
+    h2 {
+      margin-top: 0;
     }
 
-    input:checked + .slider:before {
-      transform: translateX(24px);
+    ul {
+      list-style: none;
+      padding: 0;
     }
 
-    body.dark-mode {
-      background-color: #121212;
-      color: white;
+    ul li {
+      margin: 5px 0;
+      display: flex;
+      align-items: center;
     }
 
-    .icon-light {
-      display: block;
+    ul li i {
+      margin-right: 8px;
     }
 
-    .icon-dark {
-      display: none;
+    textarea {
+      width: 100%;
+      height: 150px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
-    body.dark-mode .icon-light {
-      display: none;
+    input[type="text"], input[type="color"] {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
     }
 
-    body.dark-mode .icon-dark {
-      display: block;
+    #viewport {
+      width: 100%;
+      height: 400px;
+      background: #000;
     }
   </style>
 </head>
-<body>
+<body data-theme="light">
 
-  <div class="toggle-container">
-    <!-- Sun Icon -->
-    <svg class="icon icon-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M12 4V2M12 22v-2M4.22 4.22l1.42 1.42M18.36 18.36l-1.42-1.42M2 12H4m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l-1.42 1.42M12 8a4 4 0 100 8 4 4 0 000-8z"
-        stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+  <!-- Toolbar -->
+  <header>
+    <div><strong>Orgena Studio</strong></div>
+    <div>
+      <button><i class="fas fa-file"></i> New</button>
+      <button><i class="fas fa-folder-open"></i> Open</button>
+      <button><i class="fas fa-save"></i> Save</button>
+      <button><i class="fas fa-play"></i> Play</button>
+      <button onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon" id="theme-icon"></i>
+      </button>
+    </div>
+  </header>
 
-    <!-- Moon Icon -->
-    <svg class="icon icon-dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"
-        stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+  <!-- Main Layout -->
+  <main>
+    <!-- Explorer/Assets -->
+    <aside>
+      <h2>Explorer</h2>
+      <ul>
+        <li><i class="fas fa-box"></i> Workspace</li>
+        <li><i class="fas fa-code"></i> Script1</li>
+        <li><i class="fas fa-tree"></i> Tree</li>
+      </ul>
 
-    <label class="switch">
-      <input type="checkbox" id="themeToggle">
-      <span class="slider"></span>
-    </label>
-  </div>
-<centre><h1>&nbsp;&nbsp;&nbsp;Orgena Studio</h1></centre>
+      <h2>Assets</h2>
+      <ul>
+        <li><i class="fas fa-cube"></i> Cube</li>
+        <li><i class="fas fa-circle"></i> Sphere</li>
+        <li><i class="fas fa-folder"></i> Models</li>
+      </ul>
+    </aside>
+
+    <!-- Viewport -->
+    <section>
+      <h2>Scene Viewport</h2>
+      <div id="viewport"></div>
+    </section>
+
+    <!-- Properties + Script -->
+    <div class="properties">
+      <h2>Properties</h2>
+      <p>Name: <input type="text" value="Cube" /></p>
+      <p>Position: <input type="text" value="0, 1, 0" /></p>
+      <p>Color: <input type="color" value="#ff0000" /></p>
+
+      <h2>Script</h2>
+      <div id="editor" style="height: 200px;"></div>
+    </div>
+  </main>
+
   <script>
-    const toggle = document.getElementById('themeToggle');
-    const body = document.body;
+    // Theme Toggle Function
+    function toggleTheme() {
+      const body = document.body;
+      const current = body.getAttribute("data-theme");
+      const icon = document.getElementById("theme-icon");
 
-    // Apply stored theme
-    if (localStorage.getItem('theme') === 'dark') {
-      body.classList.add('dark-mode');
-      toggle.checked = true;
+      if (current === "light") {
+        body.setAttribute("data-theme", "dark");
+        icon.classList.remove("fa-moon");
+        icon.classList.add("fa-sun");
+      } else {
+        body.setAttribute("data-theme", "light");
+        icon.classList.remove("fa-sun");
+        icon.classList.add("fa-moon");
+      }
     }
 
-    toggle.addEventListener('change', () => {
-      body.classList.toggle('dark-mode');
-      const theme = body.classList.contains('dark-mode') ? 'dark' : 'light';
-      localStorage.setItem('theme', theme);
+    // Initialize Monaco Editor
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
+    require(['vs/editor/editor.main'], function () {
+      monaco.editor.create(document.getElementById('editor'), {
+        value: 'console.log("Hello, Orgena!");',
+        language: 'javascript',
+        theme: 'vs-dark',
+        automaticLayout: true
+      });
     });
+
+    // Initialize Three.js 3D Viewport
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('viewport').appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animate();
   </script>
 
 </body>
