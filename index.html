@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-  <!-- Main Studio 1 -->
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Orgena Studio</title>
   <style>
     body {
@@ -11,8 +10,8 @@
       padding: 0;
       background-color: white;
       color: black;
-      transition: background-color 0.3s, color 0.3s;
       font-family: Arial, sans-serif;
+      transition: background-color 0.3s, color 0.3s;
     }
 
     .toggle-container {
@@ -20,13 +19,23 @@
       top: 20px;
       right: 20px;
       z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      transition: opacity 0.3s ease;
     }
 
     .switch {
       position: relative;
       display: inline-block;
-      width: 60px;
-      height: 34px;
+      width: 50px;
+      height: 26px;
     }
 
     .switch input {
@@ -50,10 +59,10 @@
     .slider:before {
       position: absolute;
       content: "";
-      height: 26px;
-      width: 26px;
-      left: 4px;
-      bottom: 4px;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
       background-color: white;
       transition: 0.4s;
       border-radius: 50%;
@@ -64,43 +73,63 @@
     }
 
     input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-       .light-dark {
-      position: fixed;
-      top: 30px;
-      right: 20px;
-      z-index: 1000;
+      transform: translateX(24px);
     }
 
-    /* Dark Mode */
     body.dark-mode {
       background-color: #121212;
       color: white;
+    }
+
+    .icon-light {
+      display: block;
+    }
+
+    .icon-dark {
+      display: none;
+    }
+
+    body.dark-mode .icon-light {
+      display: none;
+    }
+
+    body.dark-mode .icon-dark {
+      display: block;
     }
   </style>
 </head>
 <body>
 
   <div class="toggle-container">
+    <!-- Light mode icon (sun) -->
+    <svg class="icon icon-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M12 4.5a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5zm0 13a1 1 0 0 1 1 1V20a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM6 11a1 1 0 0 1 1-1H8.5a1 1 0 0 1 0 2H7a1 1 0 0 1-1-1zm10 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H17a1 1 0 0 1-1-1zM7.76 7.76a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 1 1-1.41 1.41L7.76 9.17a1 1 0 0 1 0-1.41zm7.07 7.07a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 1 1-1.41 1.41l-1.06-1.06a1 1 0 0 1 0-1.41zM4.5 12a1 1 0 0 1 1-1h1.5a1 1 0 1 1 0 2H5.5a1 1 0 0 1-1-1zM16.24 7.76a1 1 0 0 1 1.41 1.41l-1.06 1.06a1 1 0 1 1-1.41-1.41l1.06-1.06zM12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8z"/>
+    </svg>
+
+    <!-- Dark mode icon (moon) -->
+    <svg class="icon icon-dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path d="M21 12.79A9 9 0 0 1 11.21 3c-.4 0-.8.03-1.19.1a.75.75 0 0 0-.33 1.34A7.5 7.5 0 1 0 19.56 14a.75.75 0 0 0 1.34-.33c.07-.39.1-.79.1-1.19z"/>
+    </svg>
+
     <label class="switch">
       <input type="checkbox" id="themeToggle">
       <span class="slider"></span>
     </label>
   </div>
 
-  <div style="padding: 50px;">
-    
-    <div class="light-dark"><p style="color: black;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Light</p><p style="position: relative; top: -42px; color: white;">&nbsp;&nbsp;&nbsp;Dark</p></div>
+  <div style="padding: 60px;">
+    <h1>Welcome to Orgena Studio</h1>
+    <p>This is a sample page with a professional dark/light mode switch.</p>
   </div>
 
   <script>
     const toggle = document.getElementById('themeToggle');
+    const body = document.body;
+
     toggle.addEventListener('change', () => {
-      document.body.classList.toggle('dark-mode');
+      body.classList.toggle('dark-mode');
     });
   </script>
 
 </body>
 </html>
-
