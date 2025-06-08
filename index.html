@@ -1,505 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Orgena Studio - Advanced 3D Editor</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
-  body {
-    margin: 0; height: 100vh; overflow: hidden;
-    font-family: 'Fira Code', monospace;
-    background: #121212; color: #eee;
-    display: grid; grid-template-columns: 250px 1fr 350px;
-    grid-template-rows: 40px 1fr;
-    grid-template-areas:
-      "toolbar toolbar toolbar"
-      "explorer viewport properties";
-  }
-  #toolbar {
-    grid-area: toolbar; background: #1e1e1e; display: flex; align-items: center; padding: 0 10px;
-    border-bottom: 1px solid #333;
-  }
-  #toolbar button, #toolbar select {
-    margin-right: 10px; padding: 6px 10px;
-    background: #333; color: #eee; border: none; border-radius: 3px; cursor: pointer;
-  }
-  #toolbar button:hover, #toolbar select:hover {
-    background: #444;
-  }
-  #explorer {
-    grid-area: explorer; background: #1e1e1e; border-right: 1px solid #333;
-    display: flex; flex-direction: column;
-  }
-  #explorer h2 {
-    margin: 10px; font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 5px;
-  }
-  #objectList {
-    flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0;
-  }
-  #objectList li {
-    padding: 8px 12px; cursor: pointer;
-    border-bottom: 1px solid #333;
-  }
-  #objectList li.selected {
-    background: #3a3a3a;
-  }
-  #viewport {
-    grid-area: viewport; position: relative;
-  }
-  canvas {
-    width: 100%; height: 100%; display: block;
-  }
-  #properties {
-    grid-area: properties; background: #1e1e1e; border-left: 1px solid #333;
-    display: flex; flex-direction: column; padding: 10px;
-    color: #eee;
-  }
-  #properties h2 {
-    margin-top: 0; font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 5px;
-  }
-  #properties label {
-    margin-top: 10px; display: block; font-size: 0.9em;
-  }
-  #properties input[type=text], #properties input[type=color], #properties textarea {
-    width: 100%; padding: 6px; margin-top: 4px; background: #333; border: none; border-radius: 3px;
-    color: #eee; font-family: 'Fira Code', monospace; font-size: 0.9em;
-  }
-  #properties textarea {
-    resize: vertical; height: 120px;
-  }
-  #properties button {
-    margin-top: 15px; padding: 8px 12px;
-    background: #333; color: #eee; border: none; border-radius: 3px; cursor: pointer;
-  }
-  #properties button:hover {
-    background: #444;
-  }
-  /* Scrollbar styling */
-  #objectList::-webkit-scrollbar, #properties textarea::-webkit-scrollbar {
-    width: 8px;
-  }
-  #objectList::-webkit-scrollbar-thumb, #properties textarea::-webkit-scrollbar-thumb {
-    background: #555; border-radius: 4px;
-  }
-  /* Tooltip style for gizmo handles */
-  .gizmo-handle {
-    cursor: pointer;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orgena Studio - 3D Editor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: white;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Style */
+        #sidebar {
+            width: 320px;
+            background-color: #222;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        #sidebar button,
+        #sidebar select,
+        #sidebar input,
+        #sidebar textarea {
+            background: #333;
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+        }
+
+        #sidebar button:hover {
+            background-color: #555;
+            cursor: pointer;
+        }
+
+        label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #objectList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            height: 120px;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+
+        #objectList li {
+            padding: 8px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #objectList li.selected {
+            background-color: #555;
+        }
+
+        #viewport {
+            flex-grow: 1;
+            background-color: #121212;
+            position: relative;
+        }
+
+        /* Dark/Light Mode Toggle */
+        body.light-mode {
+            background-color: #fff;
+            color: #000;
+        }
+
+        body.light-mode #sidebar {
+            background-color: #f5f5f5;
+        }
+
+        body.light-mode #sidebar button,
+        body.light-mode #sidebar input,
+        body.light-mode #sidebar select,
+        body.light-mode #sidebar textarea {
+            background-color: #fff;
+            color: #000;
+        }
+
+        body.light-mode #objectList li {
+            color: #000;
+        }
+
+        body.light-mode #objectList li.selected {
+            background-color: #888;
+        }
+    </style>
 </head>
 <body>
+    <div id="sidebar">
+        <!-- Add Object Controls -->
+        <button id="btnAddObject">Add Object</button>
+        <select id="primitiveType">
+            <option value="cube">Cube</option>
+            <option value="sphere">Sphere</option>
+            <option value="cylinder">Cylinder</option>
+            <option value="plane">Plane</option>
+        </select>
 
-<div id="toolbar" role="toolbar" aria-label="Main toolbar">
-  <button id="btnAddObject">Add Object</button>
-  <select id="primitiveType" aria-label="Select primitive type">
-    <option value="cube">Cube</option>
-    <option value="sphere">Sphere</option>
-    <option value="cylinder">Cylinder</option>
-    <option value="plane">Plane</option>
-  </select>
-  <button id="btnSaveProject">Save Project</button>
-  <button id="btnLoadProject">Load Project</button>
-  <button id="btnToggleMode" aria-pressed="false">Toggle Dark/Light Mode</button>
-</div>
+        <ul id="objectList"></ul>
 
-<div id="explorer" aria-label="Object Explorer">
-  <h2>Explorer</h2>
-  <ul id="objectList" role="listbox" tabindex="0" aria-multiselectable="false"></ul>
-</div>
+        <!-- Object Properties Panel -->
+        <label for="propName">Object Name</label>
+        <input id="propName" type="text">
 
-<div id="viewport" aria-label="3D Viewport">
-  <!-- Three.js Canvas will be here -->
-</div>
+        <label for="propPosition">Position (x, y, z)</label>
+        <input id="propPosition" type="text" placeholder="0, 0, 0">
 
-<div id="properties" aria-label="Properties and Scripting">
-  <h2>Properties</h2>
-  <label for="propName">Name</label>
-  <input type="text" id="propName" aria-describedby="propNameDesc" />
-  <span id="propNameDesc" class="sr-only">Name of the selected object</span>
+        <label for="propRotation">Rotation (deg x, y, z)</label>
+        <input id="propRotation" type="text" placeholder="0, 0, 0">
 
-  <label for="propPosition">Position (x, y, z)</label>
-  <input type="text" id="propPosition" aria-describedby="propPositionDesc" />
-  <span id="propPositionDesc" class="sr-only">Comma separated position coordinates</span>
+        <label for="propScale">Scale (x, y, z)</label>
+        <input id="propScale" type="text" placeholder="1, 1, 1">
 
-  <label for="propRotation">Rotation (x°, y°, z°)</label>
-  <input type="text" id="propRotation" aria-describedby="propRotationDesc" />
-  <span id="propRotationDesc" class="sr-only">Comma separated rotation in degrees</span>
+        <label for="propColor">Color</label>
+        <input id="propColor" type="color">
 
-  <label for="propScale">Scale (x, y, z)</label>
-  <input type="text" id="propScale" aria-describedby="propScaleDesc" />
-  <span id="propScaleDesc" class="sr-only">Comma separated scale values</span>
+        <label for="propScript">Script</label>
+        <textarea id="propScript" placeholder="e.g. obj.rotation.y += 0.01;"></textarea>
 
-  <label for="propColor">Color</label>
-  <input type="color" id="propColor" aria-describedby="propColorDesc" />
+        <button id="btnUpdateProperties">Update Properties</button>
+        <button id="btnSaveProject">Save Project</button>
+        <button id="btnLoadProject">Load Project</button>
+        <button id="btnToggleMode">Toggle Dark/Light Mode</button>
+    </div>
 
-  <label for="propScript">Lua Script</label>
-  <textarea id="propScript" aria-describedby="propScriptDesc" spellcheck="false" autocomplete="off" autocorrect="off"></textarea>
-  <span id="propScriptDesc" class="sr-only">Lua scripting code controlling the object</span>
+    <div id="viewport"></div>
 
-  <button id="btnUpdateProperties">Update Properties</button>
-</div>
+    <!-- Three.js and controls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/TransformControls.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/controls/TransformControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js"></script>
+    <script>
+        (() => {
+            // Initial Setup
+            const container = document.getElementById('viewport');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 10);
 
-<script>
-(() => {
-  // Basic setup
-  const container = document.getElementById('viewport');
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(70, container.clientWidth/container.clientHeight, 0.1, 1000);
-  camera.position.set(5, 5, 7);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
 
-  const renderer = new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setClearColor(0x121212);
-  renderer.shadowMap.enabled = true;
-  container.appendChild(renderer.domElement);
+            // Lighting
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+            scene.add(hemiLight);
 
-  // Controls
-  const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-  orbitControls.enableDamping = true;
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            scene.add(dirLight);
 
-  // Transform Controls (move/rotate/scale gizmos)
-  const transformControls = new THREE.TransformControls(camera, renderer.domElement);
-  scene.add(transformControls);
+            // Controls
+            const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+            orbitControls.enableDamping = true;
 
-  // Grid and Axes helpers
-  const gridHelper = new THREE.GridHelper(20, 20);
-  scene.add(gridHelper);
-  const axesHelper = new THREE.AxesHelper(5);
-  scene.add(axesHelper);
+            const transformControls = new THREE.TransformControls(camera, renderer.domElement);
+            scene.add(transformControls);
 
-  // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  directionalLight.position.set(5,10,7);
-  directionalLight.castShadow = true;
-  scene.add(directionalLight);
+            // Data
+            const objects = [];
+            let selectedObject = null;
 
-  // Objects store
-  const objects = {};
-  let selectedObjectId = null;
-  let objectIdCounter = 0;
+            // UI Elements
+            const btnAddObject = document.getElementById('btnAddObject');
+            const primitiveType = document.getElementById('primitiveType');
+            const objectList = document.getElementById('objectList');
+            const btnUpdateProperties = document.getElementById('btnUpdateProperties');
+            const btnSaveProject = document.getElementById('btnSaveProject');
+            const btnLoadProject = document.getElementById('btnLoadProject');
+            const btnToggleMode = document.getElementById('btnToggleMode');
 
-  // UI elements
-  const objectListEl = document.getElementById('objectList');
-  const propName = document.getElementById('propName');
-  const propPosition = document.getElementById('propPosition');
-  const propRotation = document.getElementById('propRotation');
-  const propScale = document.getElementById('propScale');
-  const propColor = document.getElementById('propColor');
-  const propScript = document.getElementById('propScript');
-  const btnAddObject = document.getElementById('btnAddObject');
-  const btnUpdateProperties = document.getElementById('btnUpdateProperties');
-  const btnSaveProject = document.getElementById('btnSaveProject');
-  const btnLoadProject = document.getElementById('btnLoadProject');
-  const primitiveTypeSelector = document.getElementById('primitiveType');
-  const btnToggleMode = document.getElementById('btnToggleMode');
+            const propName = document.getElementById('propName');
+            const propPosition = document.getElementById('propPosition');
+            const propRotation = document.getElementById('propRotation');
+            const propScale = document.getElementById('propScale');
+            const propColor = document.getElementById('propColor');
+            const propScript = document.getElementById('propScript');
 
-  // Helper functions
-  function generateId() {
-    objectIdCounter++;
-    return `obj_${objectIdCounter}`;
-  }
+            // Helpers
+            function createPrimitive(type) {
+                let geometry;
+                switch (type) {
+                    case 'cube': geometry = new THREE.BoxGeometry(1, 1, 1); break;
+                    case 'sphere': geometry = new THREE.SphereGeometry(0.5, 32, 32); break;
+                    case 'cylinder': geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); break;
+                    case 'plane': geometry = new THREE.PlaneGeometry(1, 1); break;
+                    default: geometry = new THREE.BoxGeometry(1, 1, 1);
+                }
+                const material = new THREE.MeshStandardMaterial({ color: 0x156289 });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.name = `${type[0].toUpperCase() + type.slice(1)} ${objects.length + 1}`;
+                return mesh;
+            }
 
-  // Create primitives helper
-  function createPrimitive(type, color=0x999999) {
-    let geometry;
-    switch(type) {
-      case 'cube':
-        geometry = new THREE.BoxGeometry(1,1,1);
-        break;
-      case 'sphere':
-        geometry = new THREE.SphereGeometry(0.6, 32, 32);
-        break;
-      case 'cylinder':
-        geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32);
-        break;
-      case 'plane':
-        geometry = new THREE.PlaneGeometry(1.2,1.2);
-        break;
-      default:
-        geometry = new THREE.BoxGeometry(1,1,1);
-    }
-    const material = new THREE.MeshStandardMaterial({color});
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
-  }
+            function updateObjectList() {
+                objectList.innerHTML = '';
+                objects.forEach((obj) => {
+                    const li = document.createElement('li');
+                    li.textContent = obj.name;
+                    li.classList.toggle('selected', obj === selectedObject);
+                    li.addEventListener('click', () => selectObject(obj));
+                    objectList.appendChild(li);
+                });
+            }
 
-  // Add object
-  function addObject(type) {
-    const id = generateId();
-    const mesh = createPrimitive(type, 0x999999);
-    mesh.position.set(0, 0.6, 0);
-    mesh.name = `${type.charAt(0).toUpperCase() + type.slice(1)} ${objectIdCounter}`;
-    scene.add(mesh);
+            function selectObject(obj) {
+                if (selectedObject === obj) return;
+                selectedObject = obj;
+                transformControls.attach(obj);
+                updateObjectList();
+                loadProperties(obj);
+            }
 
-    objects[id] = {
-      id,
-      mesh,
-      type,
-      script: `-- Lua script for ${mesh.name}\nfunction update(dt)\n  -- dt: delta time\nend`
-    };
-    addObjectToExplorer(id);
-    selectObject(id);
-  }
+            function loadProperties(obj) {
+                propName.value = obj.name;
+                propPosition.value = `${obj.position.x.toFixed(1)}, ${obj.position.y.toFixed(1)}, ${obj.position.z.toFixed(1)}`;
+                propRotation.value = `${THREE.MathUtils.radToDeg(obj.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.rotation.z).toFixed(1)}`;
+                propScale.value = `${obj.scale.x.toFixed(1)}, ${obj.scale.y.toFixed(1)}, ${obj.scale.z.toFixed(1)}`;
+                propColor.value = `#${obj.material.color.getHexString()}`;
+                propScript.value = obj.userData.script || '';
+            }
 
-  // Add object to explorer list UI
-  function addObjectToExplorer(id) {
-    const obj = objects[id];
-    const li = document.createElement('li');
-    li.textContent = obj.mesh.name;
-    li.id = id;
-    li.tabIndex = 0;
-    li.setAttribute('role', 'option');
-    li.addEventListener('click', () => selectObject(id));
-    li.addEventListener('keydown', e => {
-      if(e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selectObject(id);
-      }
-    });
-    objectListEl.appendChild(li);
-  }
+            function clearProperties() {
+                propName.value = '';
+                propPosition.value = '';
+                propRotation.value = '';
+                propScale.value = '';
+                propColor.value = '#156289';
+                propScript.value = '';
+            }
 
-  // Refresh explorer list UI
-  function refreshExplorer() {
-    objectListEl.innerHTML = '';
-    Object.keys(objects).forEach(id => addObjectToExplorer(id));
-  }
+            // Event Listeners
+            btnAddObject.addEventListener('click', () => {
+                const newObject = createPrimitive(primitiveType.value);
+                scene.add(newObject);
+                objects.push(newObject);
+                updateObjectList();
+            });
 
-  // Select object by id
-  function selectObject(id) {
-    if (!objects[id]) return;
-    selectedObjectId = id;
-    for(let li of objectListEl.children) {
-      li.classList.toggle('selected', li.id === id);
-      li.setAttribute('aria-selected', li.id === id ? 'true' : 'false');
-    }
-    const obj = objects[id];
-    // Fill properties inputs
-    propName.value = obj.mesh.name;
-    propPosition.value = `${obj.mesh.position.x.toFixed(2)}, ${obj.mesh.position.y.toFixed(2)}, ${obj.mesh.position.z.toFixed(2)}`;
-    propRotation.value = `${THREE.MathUtils.radToDeg(obj.mesh.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.z).toFixed(1)}`;
-    propScale.value = `${obj.mesh.scale.x.toFixed(2)}, ${obj.mesh.scale.y.toFixed(2)}, ${obj.mesh.scale.z.toFixed(2)}`;
-    propColor.value = "#" + obj.mesh.material.color.getHexString();
-    propScript.value = obj.script;
+            btnUpdateProperties.addEventListener('click', () => {
+                if (!selectedObject) return;
+                selectedObject.name = propName.value;
+                const [x, y, z] = propPosition.value.split(',').map(Number);
+                selectedObject.position.set(x, y, z);
+                const [rx, ry, rz] = propRotation.value.split(',').map(Number);
+                selectedObject.rotation.set(THREE.MathUtils.degToRad(rx), THREE.MathUtils.degToRad(ry), THREE.MathUtils.degToRad(rz));
+                const [sx, sy, sz] = propScale.value.split(',').map(Number);
+                selectedObject.scale.set(sx, sy, sz);
+                selectedObject.material.color.set(propColor.value);
+                selectedObject.userData.script = propScript.value;
+            });
 
-    // Attach transform controls to selected mesh
-    transformControls.attach(obj.mesh);
-  }
+            btnSaveProject.addEventListener('click', () => {
+                localStorage.setItem('orgena_project', JSON.stringify(objects.map((obj) => ({
+                    name: obj.name,
+                    type: obj.geometry.type,
+                    position: obj.position.toArray(),
+                    rotation: obj.rotation.toArray(),
+                    scale: obj.scale.toArray(),
+                    color: obj.material.color.getHexString(),
+                    script: obj.userData.script
+                }))));
+                alert('Project saved!');
+            });
 
-  // Update selected object's properties from inputs
-  function updateSelectedObject() {
-    if(!selectedObjectId) return;
-    const obj = objects[selectedObjectId];
+            btnLoadProject.addEventListener('click', () => {
+                const savedProject = JSON.parse(localStorage.getItem('orgena_project'));
+                if (savedProject) {
+                    objects.length = 0;
+                    scene.clear();
+                    savedProject.forEach((data) => {
+                        const mesh = createPrimitive(data.type.toLowerCase());
+                        mesh.name = data.name;
+                        mesh.position.set(...data.position);
+                        mesh.rotation.set(...data.rotation);
+                        mesh.scale.set(...data.scale);
+                        mesh.material.color.set(`#${data.color}`);
+                        mesh.userData.script = data.script;
+                        scene.add(mesh);
+                        objects.push(mesh);
+                    });
+                    updateObjectList();
+                } else {
+                    alert('No project found!');
+                }
+            });
 
-    // Name
-    const newName = propName.value.trim();
-    if(newName) {
-      obj.mesh.name = newName;
-      // Update explorer list text
-      for(let li of objectListEl.children) {
-        if(li.id === selectedObjectId) li.textContent = newName;
-      }
-    }
+            // Dark/Light Mode Toggle
+            btnToggleMode.addEventListener('click', () => {
+                document.body.classList.toggle('light-mode');
+            });
 
-    // Position
-    const posParts = propPosition.value.split(',').map(s => parseFloat(s.trim()));
-    if(posParts.length === 3 && posParts.every(n => !isNaN(n))) {
-      obj.mesh.position.set(posParts[0], posParts[1], posParts[2]);
-    }
+            // Resize Handling
+            window.addEventListener('resize', () => {
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+            });
 
-    // Rotation (degrees to radians)
-    const rotParts = propRotation.value.split(',').map(s => THREE.MathUtils.degToRad(parseFloat(s.trim())));
-    if(rotParts.length === 3 && rotParts.every(n => !isNaN(n))) {
-      obj.mesh.rotation.set(rotParts[0], rotParts[1], rotParts[2]);
-    }
+            // Main Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+                orbitControls.update();
+            }
 
-    // Scale
-    const scaleParts = propScale.value.split(',').map(s => parseFloat(s.trim()));
-    if(scaleParts.length === 3 && scaleParts.every(n => !isNaN(n))) {
-      obj.mesh.scale.set(scaleParts[0], scaleParts[1], scaleParts[2]);
-    }
-
-    // Color
-    try {
-      obj.mesh.material.color.set(propColor.value);
-    } catch(e) {}
-
-    // Script
-    obj.script = propScript.value;
-
-  }
-
-  // Save and Load project from localStorage
-  function saveProject() {
-    const data = {
-      objects: Object.values(objects).map(obj => ({
-        id: obj.id,
-        name: obj.mesh.name,
-        type: obj.type,
-        position: obj.mesh.position.toArray(),
-        rotation: [obj.mesh.rotation.x, obj.mesh.rotation.y, obj.mesh.rotation.z],
-        scale: obj.mesh.scale.toArray(),
-        color: "#" + obj.mesh.material.color.getHexString(),
-        script: obj.script,
-      }))
-    };
-    localStorage.setItem('orgena_project', JSON.stringify(data));
-    alert('Project saved locally.');
-  }
-
-  function loadProject() {
-    const dataStr = localStorage.getItem('orgena_project');
-    if(!dataStr) {
-      alert('No saved project found.');
-      return;
-    }
-    try {
-      const data = JSON.parse(dataStr);
-      // Clear existing
-      Object.values(objects).forEach(obj => scene.remove(obj.mesh));
-      Object.keys(objects).forEach(k => delete objects[k]);
-      objectIdCounter = 0;
-      objectListEl.innerHTML = '';
-
-      data.objects.forEach(objData => {
-        const mesh = createPrimitive(objData.type, parseInt(objData.color.slice(1), 16));
-        mesh.position.fromArray(objData.position);
-        mesh.rotation.set(...objData.rotation);
-        mesh.scale.fromArray(objData.scale);
-        mesh.name = objData.name;
-        scene.add(mesh);
-        objects[objData.id] = {
-          id: objData.id,
-          mesh,
-          type: objData.type,
-          script: objData.script,
-        };
-        objectIdCounter = Math.max(objectIdCounter, parseInt(objData.id.split('_')[1]));
-      });
-      refreshExplorer();
-      // Select first object if exists
-      if(Object.keys(objects).length > 0) selectObject(Object.keys(objects)[0]);
-      alert('Project loaded successfully.');
-    } catch(e) {
-      alert('Failed to load project: ' + e.message);
-    }
-  }
-
-  // Lua Scripting Execution (using fengari)
-  function runLuaScript(obj, dt) {
-    if(!obj.script || obj.script.trim() === '') return;
-    try {
-      // Create Lua state
-      const L = fengari.lauxlib.luaL_newstate();
-      fengari.lualib.luaL_openlibs(L);
-      // Load script
-      const luaCode = obj.script + '\nreturn update';
-      fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(luaCode));
-      fengari.lua.lua_pcall(L, 0, 1, 0);
-      // Get update function
-      if(fengari.lua.lua_isfunction(L, -1)) {
-        fengari.lua.lua_pushnumber(L, dt);
-        fengari.lua.lua_pcall(L, 1, 0, 0);
-      }
-      fengari.lua.lua_close(L);
-    } catch(e) {
-      console.warn('Lua script error:', e);
-    }
-  }
-
-  // Animate loop
-  let lastTime = 0;
-  function animate(time=0) {
-    requestAnimationFrame(animate);
-    orbitControls.update();
-    transformControls.update();
-
-    const delta = (time - lastTime)/1000;
-    lastTime = time;
-
-    // Run Lua update scripts
-    Object.values(objects).forEach(obj => runLuaScript(obj, delta));
-
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  // UI event handlers
-  btnAddObject.onclick = () => {
-    addObject(primitiveTypeSelector.value);
-  };
-  btnUpdateProperties.onclick = () => {
-    updateSelectedObject();
-  };
-  btnSaveProject.onclick = () => {
-    updateSelectedObject();
-    saveProject();
-  };
-  btnLoadProject.onclick = () => {
-    loadProject();
-  };
-
-  // Sync properties with transform controls move
-  transformControls.addEventListener('objectChange', () => {
-    if(!selectedObjectId) return;
-    const obj = objects[selectedObjectId];
-    if(!obj) return;
-
-    // Update inputs based on mesh transforms
-    propPosition.value = `${obj.mesh.position.x.toFixed(2)}, ${obj.mesh.position.y.toFixed(2)}, ${obj.mesh.position.z.toFixed(2)}`;
-    propRotation.value = `${THREE.MathUtils.radToDeg(obj.mesh.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.z).toFixed(1)}`;
-    propScale.value = `${obj.mesh.scale.x.toFixed(2)}, ${obj.mesh.scale.y.toFixed(2)}, ${obj.mesh.scale.z.toFixed(2)}`;
-  });
-
-  // Select first object on load
-  window.onload = () => {
-    if(objectListEl.children.length > 0) selectObject(objectListEl.children[0].id);
-  };
-
-  // Keyboard nav for explorer (arrow keys)
-  objectListEl.addEventListener('keydown', e => {
-    if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const current = document.activeElement;
-      if(current.parentElement !== objectListEl) return;
-      let newIndex;
-      const items = Array.from(objectListEl.children);
-      const currentIndex = items.indexOf(current);
-      if(e.key === 'ArrowDown') {
-        newIndex = (currentIndex + 1) % items.length;
-      } else {
-        newIndex = (currentIndex - 1 + items.length) % items.length;
-      }
-      items[newIndex].focus();
-    }
-  });
-
-  // Dark/Light Mode toggle
-  btnToggleMode.onclick = () => {
-    if(document.body.style.background === 'white') {
-      document.body.style.background = '#121212';
-      document.body.style.color = '#eee';
-      renderer.setClearColor(0x121212);
-      btnToggleMode.setAttribute('aria-pressed', 'false');
-    } else {
-      document.body.style.background = 'white';
-      document.body.style.color = '#121212';
-      renderer.setClearColor(0xffffff);
-      btnToggleMode.setAttribute('aria-pressed', 'true');
-    }
-  };
-})();
-</script>
-
+            animate();
+        })();
+    </script>
 </body>
 </html>
