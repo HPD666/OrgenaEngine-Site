@@ -134,10 +134,20 @@
       <h3>Properties</h3>
       <div id="properties-content">Select an object to edit.</div>
       <div class="prop-field">
-  <label>Object Name</label>
-  <input type="text" id="prop-name" value="Unnamed Object">
+  <label for="prop-name">Object Name</label>
+  <input type="text" id="prop-name" placeholder="Enter object name">
 </div>
 <button id="rename-object">Rename Object</button>
+
+    <script>
+  function updateProperties() {
+    const propDiv = document.getElementById("properties-content");
+    if (!selectedObject) {
+      propDiv.innerHTML = "Select an object to edit.";
+      return;
+    }
+
+  }
 <script>
   function updateProperties() {
     const propDiv = document.getElementById("properties-content");
@@ -163,6 +173,23 @@
     });
   }
 
+  function updateExplorer() {
+    const list = document.getElementById("explorer-list");
+    list.innerHTML = "";
+    objects.forEach(obj => {
+      const item = document.createElement("div");
+      item.className = "object-item" + (selectedObject && selectedObject.id === obj.id ? " selected" : "");
+      item.textContent = obj.name || obj.type + " #" + obj.id;
+      item.onclick = () => {
+        selectedObject = obj;
+        updateExplorer();
+        updateProperties();
+      };
+      list.appendChild(item);
+    });
+  }
+</script>
+<script>
   function updateExplorer() {
     const list = document.getElementById("explorer-list");
     list.innerHTML = "";
