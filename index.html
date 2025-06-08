@@ -65,6 +65,12 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
+       .light-dark {
+      position: fixed;
+      top: 30px;
+      right: 20px;
+      z-index: 1000;
+    }
 
     /* Dark Mode */
     body.dark-mode {
@@ -84,7 +90,7 @@
 
   <div style="padding: 50px;">
     
-    <div class="toggle-container"><h4 style="color: black;">Light</h4><h4 style="color: white;">Dark</div>
+    <div class="light-dark"><h4 style="color: black;">Light</h4><h4 style="color: white;">Dark</div>
   </div>
 
   <script>
