@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Main Repo -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Orgena Studio</title>
@@ -21,12 +22,12 @@
       z-index: 1000;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .icon {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       fill: currentColor;
       transition: opacity 0.3s ease;
     }
@@ -101,14 +102,14 @@
 <body>
 
   <div class="toggle-container">
-    <!-- Light mode icon (sun) -->
+    <!-- Professional Sun Icon (Light Mode) -->
     <svg class="icon icon-light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M12 4.5a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1V6a1 1 0 0 1-2 0V4.5zm0 13a1 1 0 0 1 1 1V20a1 1 0 0 1-2 0v-1.5a1 1 0 0 1 1-1zM6 11a1 1 0 0 1 1-1H8.5a1 1 0 0 1 0 2H7a1 1 0 0 1-1-1zm10 0a1 1 0 0 1 1-1h1.5a1 1 0 0 1 0 2H17a1 1 0 0 1-1-1zM7.76 7.76a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 1 1-1.41 1.41L7.76 9.17a1 1 0 0 1 0-1.41zm7.07 7.07a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 1 1-1.41 1.41l-1.06-1.06a1 1 0 0 1 0-1.41zM4.5 12a1 1 0 0 1 1-1h1.5a1 1 0 1 1 0 2H5.5a1 1 0 0 1-1-1zM16.24 7.76a1 1 0 0 1 1.41 1.41l-1.06 1.06a1 1 0 1 1-1.41-1.41l1.06-1.06zM12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8z"/>
+      <path d="M12 4V2M12 22v-2M4.22 4.22l1.42 1.42M18.36 18.36l-1.42-1.42M2 12H4m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l-1.42 1.42M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
 
-    <!-- Dark mode icon (moon) -->
+    <!-- Professional Moon Icon (Dark Mode) -->
     <svg class="icon icon-dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path d="M21 12.79A9 9 0 0 1 11.21 3c-.4 0-.8.03-1.19.1a.75.75 0 0 0-.33 1.34A7.5 7.5 0 1 0 19.56 14a.75.75 0 0 0 1.34-.33c.07-.39.1-.79.1-1.19z"/>
+      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
 
     <label class="switch">
@@ -117,11 +118,7 @@
     </label>
   </div>
 
-  <div style="padding: 60px;">
-    <h1>Welcome to Orgena Studio</h1>
-    <p>This is a sample page with a professional dark/light mode switch.</p>
-  </div>
-
+  
   <script>
     const toggle = document.getElementById('themeToggle');
     const body = document.body;
