@@ -230,14 +230,8 @@ console.log('Script executed');</textarea>
 <script>
 
     // Attach event listener AFTER UI elements are created
-    document.getElementById("rename-object").addEventListener("click", () => {
-      let newName = document.getElementById("prop-name").value.trim();
-      if (newName) {
-        selectedObject.name = newName;
-        updateExplorer();
-      }
-    });
-  }
+
+
 
   function updateExplorer() {
     const list = document.getElementById("explorer-list");
@@ -248,6 +242,10 @@ console.log('Script executed');</textarea>
       item.textContent = obj.name || obj.type + " #" + obj.id;
       item.onclick = () => {
         selectedObject = obj;
+           document.getElementById("rename-object").addEventListener("click", () => {
+      let newName = document.getElementById("prop-name").value.trim();
+      if (newName) {
+        selectedObject.name = newName;
         updateExplorer();
         updateProperties();
       };
