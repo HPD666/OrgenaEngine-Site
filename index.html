@@ -140,6 +140,21 @@ console.log('Script executed');</textarea>
       <button id="run-script">Run Script</button>
     </div>
   </div>
+  <button id="theme-toggle" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; background: #333; color: #fff; border: none; cursor: pointer;">🌙 Dark Mode</button>
+<script>
+  const button = document.getElementById("theme-toggle");
+  let isDark = false;
+
+  button.addEventListener("click", () => {
+    document.body.style.backgroundColor = isDark ? "#ffffff" : "#222";
+    document.body.style.color = isDark ? "#000000" : "#ffffff";
+    button.textContent = isDark ? "🌙 Dark Mode" : "☀ Light Mode";
+    button.style.background = isDark ? "#333" : "#ddd";
+    button.style.color = isDark ? "#fff" : "#000";
+    isDark = !isDark;
+  });
+</script>
+
   <input type="file" id="load-input" accept=".json">
   <div id="console"><button id="clear-console">Clear</button></div>
   <script>
