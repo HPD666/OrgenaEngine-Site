@@ -109,7 +109,6 @@
 </head>
 <body>
     <div id="sidebar">
-        <!-- Add Object Controls -->
         <button id="btnAddObject">Add Object</button>
         <select id="primitiveType">
             <option value="cube">Cube</option>
@@ -117,44 +116,33 @@
             <option value="cylinder">Cylinder</option>
             <option value="plane">Plane</option>
         </select>
-
         <ul id="objectList"></ul>
-
-        <!-- Object Properties Panel -->
         <label for="propName">Object Name</label>
         <input id="propName" type="text">
-
         <label for="propPosition">Position (x, y, z)</label>
         <input id="propPosition" type="text" placeholder="0, 0, 0">
-
         <label for="propRotation">Rotation (deg x, y, z)</label>
         <input id="propRotation" type="text" placeholder="0, 0, 0">
-
         <label for="propScale">Scale (x, y, z)</label>
         <input id="propScale" type="text" placeholder="1, 1, 1">
-
         <label for="propColor">Color</label>
         <input id="propColor" type="color">
-
         <label for="propScript">Script</label>
         <textarea id="propScript" placeholder="e.g. obj.rotation.y += 0.01;"></textarea>
-
         <button id="btnUpdateProperties">Update Properties</button>
         <button id="btnSaveProject">Save Project</button>
         <button id="btnLoadProject">Load Project</button>
         <button id="btnToggleMode">Toggle Dark/Light Mode</button>
     </div>
-
     <div id="viewport"></div>
 
-    <!-- Three.js and controls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/TransformControls.min.js"></script>
 
     <script>
         (() => {
-            // Initial Setup
+            // Scene Setup
             const container = document.getElementById('viewport');
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -164,7 +152,6 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
             container.appendChild(renderer.domElement);
 
-            // Lighting
             const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
             scene.add(hemiLight);
 
@@ -178,7 +165,7 @@
             const transformControls = new THREE.TransformControls(camera, renderer.domElement);
             scene.add(transformControls);
 
-            // Data
+            // Variables
             const objects = [];
             let selectedObject = null;
 
@@ -198,7 +185,7 @@
             const propColor = document.getElementById('propColor');
             const propScript = document.getElementById('propScript');
 
-            // Helpers
+            // Create Primitive Objects
             function createPrimitive(type) {
                 let geometry;
                 switch (type) {
@@ -214,6 +201,7 @@
                 return mesh;
             }
 
+            // Update Object List
             function updateObjectList() {
                 objectList.innerHTML = '';
                 objects.forEach((obj) => {
@@ -225,6 +213,7 @@
                 });
             }
 
+            // Select Object
             function selectObject(obj) {
                 if (selectedObject === obj) return;
                 selectedObject = obj;
@@ -233,6 +222,7 @@
                 loadProperties(obj);
             }
 
+            // Load Object Properties
             function loadProperties(obj) {
                 propName.value = obj.name;
                 propPosition.value = `${obj.position.x.toFixed(1)}, ${obj.position.y.toFixed(1)}, ${obj.position.z.toFixed(1)}`;
@@ -242,6 +232,7 @@
                 propScript.value = obj.userData.script || '';
             }
 
+            // Clear Properties
             function clearProperties() {
                 propName.value = '';
                 propPosition.value = '';
