@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Orgena Studio - Professional Game Editor</title>
 
-  <!-- FontAwesome Icons -->
+  <!-- FontAwesome for icons -->
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -13,10 +13,12 @@
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   />
-
+  
+  <!-- Monaco Editor CDN -->
+  <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/editor/editor.main.css" />
+  
   <style>
     :root {
-      /* Light mode colors */
       --color-bg: #fefefe;
       --color-text: #1a1a1a;
       --color-panel-bg: #f7f7f7;
@@ -25,8 +27,11 @@
       --color-accent: #2563eb;
       --color-hover: #e0e7ff;
       --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      --shadow-light: rgba(0,0,0,0.12);
+      --transition: 0.3s ease;
+      --scrollbar-bg: #ccc;
+      --scrollbar-thumb: #888;
     }
-
     [data-theme="dark"] {
       --color-bg: #121212;
       --color-text: #e0e0e0;
@@ -35,304 +40,435 @@
       --color-primary: #3b82f6;
       --color-accent: #60a5fa;
       --color-hover: #2c2f45;
+      --shadow-light: rgba(0,0,0,0.8);
+      --scrollbar-bg: #222;
+      --scrollbar-thumb: #555;
     }
-
-    /* Reset */
     * {
       box-sizing: border-box;
     }
-
     body {
       margin: 0;
+      font-family: var(--font-family);
       background-color: var(--color-bg);
       color: var(--color-text);
-      font-family: var(--font-family);
       height: 100vh;
       display: grid;
       grid-template-rows: 48px 1fr;
+      overflow: hidden;
       user-select: none;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-
-    /* Toolbar */
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-bg);
+      border-radius: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+      border-radius: 6px;
+      border: 3px solid var(--scrollbar-bg);
+    }
+    /* Header - toolbar */
     header[role="banner"] {
       background-color: var(--color-panel-bg);
       border-bottom: 1px solid var(--color-border);
-      padding: 0 1rem;
       display: flex;
       align-items: center;
+      padding: 0 1rem;
       justify-content: space-between;
-      gap: 1rem;
+      box-shadow: 0 2px 5px var(--shadow-light);
       user-select: none;
+      z-index: 100;
     }
-
     header h1 {
       font-weight: 700;
-      font-size: 1.25rem;
-      letter-spacing: 0.05em;
+      font-size: 1.3rem;
+      letter-spacing: 0.08em;
       margin: 0;
       user-select: text;
+      color: var(--color-primary);
+      cursor: default;
+      user-select: none;
+      text-transform: uppercase;
     }
-
-    /* Toolbar buttons */
     .toolbar-actions {
       display: flex;
       gap: 0.5rem;
     }
-
     .toolbar-actions button {
+      all: unset;
+      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      background-color: transparent;
-      border: none;
-      padding: 0.3rem 0.8rem;
-      font-size: 0.9rem;
+      padding: 0.4rem 0.9rem;
       font-weight: 600;
+      border-radius: 6px;
       color: var(--color-text);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
+      font-size: 0.95rem;
+      transition: background-color var(--transition), color var(--transition), box-shadow var(--transition);
+      user-select: none;
+      position: relative;
     }
-
+    .toolbar-actions button i {
+      font-size: 1.1rem;
+    }
     .toolbar-actions button:hover,
     .toolbar-actions button:focus-visible {
       background-color: var(--color-hover);
-      outline: none;
+      outline-offset: 2px;
+      outline: 2px solid var(--color-accent);
+      box-shadow: 0 0 6px var(--color-accent);
+      color: var(--color-accent);
     }
-
-    /* Theme toggle button */
     #btn-theme-toggle {
-      font-size: 1.1rem;
+      font-size: 1.3rem;
+      padding: 0.3rem 0.5rem;
     }
-
-    /* Main app layout */
+    /* Tooltip base */
+    [data-tooltip] {
+      position: relative;
+      cursor: pointer;
+    }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      white-space: nowrap;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-panel-bg);
+      background: var(--color-accent);
+      border-radius: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      bottom: 100%;
+      left: 50%;
+      transform-origin: center bottom;
+      z-index: 200;
+      user-select: none;
+      translate: -50% 10px;
+    }
+    [data-tooltip]:hover::after,
+    [data-tooltip]:focus-visible::after {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    /* Main content grid */
     main[role="main"] {
       display: grid;
-      grid-template-columns: 280px 1fr 320px;
-      grid-template-rows: 1fr;
+      grid-template-columns: 300px 1fr 360px;
+      gap: 0.8rem;
+      padding: 1rem;
       height: 100%;
-      background-color: var(--color-bg);
-      gap: 0.75rem;
-      padding: 0.75rem;
+      overflow: hidden;
+      user-select: none;
     }
-
-    /* Sidebar (Explorer + Assets) */
-    aside.sidebar {
+    /* Sidebar general */
+    aside.sidebar,
+    aside.properties {
       background-color: var(--color-panel-bg);
       border: 1px solid var(--color-border);
-      border-radius: 8px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px var(--shadow-light);
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
       padding: 1rem;
+      overflow-y: auto;
       user-select: text;
     }
-
-    aside.sidebar h2 {
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      font-size: 1.1rem;
+    aside.sidebar {
+      user-select: text;
+    }
+    /* Headings */
+    aside.sidebar h2,
+    aside.properties > h2 {
       font-weight: 700;
-      border-bottom: 1px solid var(--color-border);
-      padding-bottom: 0.25rem;
+      font-size: 1.25rem;
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: 0.3rem;
+      margin: 0 0 1rem 0;
       user-select: text;
+      color: var(--color-primary);
+      letter-spacing: 0.03em;
     }
-
+    /* Explorer & Assets Sections */
     aside.sidebar section {
       flex-grow: 1;
       overflow-y: auto;
+      margin-bottom: 1.8rem;
+      user-select: text;
     }
-
+    aside.sidebar section:last-child {
+      margin-bottom: 0;
+    }
     aside.sidebar ul {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-
     aside.sidebar li {
-      padding: 0.3rem 0.5rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      border-radius: 4px;
-      transition: background-color 0.15s ease;
+      gap: 0.8rem;
+      transition: background-color 0.2s ease;
       user-select: text;
+      font-weight: 600;
+      color: var(--color-text);
+      position: relative;
     }
-
-    aside.sidebar li:hover,
-    aside.sidebar li:focus-visible {
-      background-color: var(--color-hover);
-      outline: none;
-    }
-
     aside.sidebar li i {
       color: var(--color-primary);
-      min-width: 18px;
+      min-width: 20px;
       text-align: center;
+      font-size: 1.1rem;
+      user-select: none;
+      pointer-events: none;
     }
-
-    /* Viewport section */
+    aside.sidebar li:hover,
+    aside.sidebar li:focus-visible,
+    aside.sidebar li.active {
+      background-color: var(--color-hover);
+      outline: none;
+      color: var(--color-accent);
+      box-shadow: 0 0 8px var(--color-accent);
+      font-weight: 700;
+    }
+    /* Expandable tree style */
+    aside.sidebar ul.tree {
+      padding-left: 1.2rem;
+      user-select: text;
+    }
+    aside.sidebar ul.tree li {
+      padding-left: 0.3rem;
+      position: relative;
+      user-select: text;
+    }
+    aside.sidebar ul.tree li::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      border: solid var(--color-primary);
+      border-width: 0 2px 2px 0;
+      display: inline-block;
+      padding: 2px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      user-select: none;
+      pointer-events: auto;
+    }
+    aside.sidebar ul.tree li.collapsed::before {
+      transform: translateY(-50%) rotate(-45deg);
+    }
+    aside.sidebar ul.tree li.expanded::before {
+      transform: translateY(-50%) rotate(45deg);
+    }
+    /* Viewport */
     section.viewport {
       background-color: var(--color-panel-bg);
+      border-radius: 12px;
       border: 1px solid var(--color-border);
-      border-radius: 8px;
+      box-shadow: 0 8px 16px var(--shadow-light);
       display: flex;
       flex-direction: column;
       padding: 1rem;
       user-select: none;
-    }
-
-    section.viewport h2 {
-      margin-top: 0;
-      font-weight: 700;
-      font-size: 1.2rem;
-      user-select: text;
-    }
-
-    #viewport-container {
-      flex-grow: 1;
-      margin-top: 0.75rem;
-      background-color: #000;
-      border-radius: 6px;
       overflow: hidden;
       position: relative;
-      min-height: 400px;
-      box-shadow: inset 0 0 12px rgba(255 255 255 / 0.05);
     }
-
-    /* Properties + Script panel */
-    aside.properties {
-      background-color: var(--color-panel-bg);
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-      overflow-y: auto;
-      user-select: text;
-    }
-
-    aside.properties h2 {
-      margin-top: 0;
+    section.viewport h2 {
+      margin: 0;
       font-weight: 700;
-      font-size: 1.2rem;
-      border-bottom: 1px solid var(--color-border);
-      padding-bottom: 0.3rem;
+      font-size: 1.4rem;
+      color: var(--color-primary);
       user-select: text;
     }
-
-    /* Properties form */
-    form.properties-form {
-      margin-top: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    form.properties-form label {
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 0.25rem;
-      user-select: text;
-    }
-
-    form.properties-form input[type="text"],
-    form.properties-form input[type="color"] {
-      padding: 0.4rem 0.6rem;
-      font-size: 1rem;
-      border-radius: 6px;
-      border: 1px solid var(--color-border);
-      background-color: var(--color-bg);
-      color: var(--color-text);
-      transition: border-color 0.2s ease;
-      width: 100%;
-    }
-
-    form.properties-form input[type="text"]:focus,
-    form.properties-form input[type="color"]:focus {
-      border-color: var(--color-accent);
-      outline: none;
-      box-shadow: 0 0 6px var(--color-accent);
-    }
-
-    /* Script editor container */
-    #script-editor {
+    #viewport-container {
       flex-grow: 1;
       margin-top: 1rem;
-      border: 1px solid var(--color-border);
-      border-radius: 6px;
-      background-color: var(--color-bg);
+      background-color: #000;
+      border-radius: 10px;
       overflow: hidden;
-      min-height: 250px;
-      font-family: Consolas, Monaco, 'Courier New', monospace;
+      box-shadow: inset 0 0 14px rgba(255 255 255 / 0.08);
+      position: relative;
+      min-height: 450px;
+      user-select: none;
     }
-
-    /* Scrollbar styling */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+    /* Properties */
+    aside.properties {
+      user-select: text;
+      box-shadow: 0 8px 20px var(--shadow-light);
     }
-
-    ::-webkit-scrollbar-track {
-      background: var(--color-panel-bg);
+    form.properties-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
     }
-
-    ::-webkit-scrollbar-thumb {
-      background-color: var(--color-accent);
+    form.properties-form label {
+      font-weight: 600;
+      font-size: 1rem;
+      user-select: text;
+    }
+    form.properties-form input[type="text"],
+    form.properties-form input[type="color"] {
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1.5px solid var(--color-border);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      user-select: text;
+      font-family: var(--font-family);
+      width: 100%;
+      user-select: text;
+    }
+    form.properties-form input[type="text"]:focus,
+    form.properties-form input[type="color"]:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 10px var(--color-accent);
+    }
+    /* Script editor container */
+    #script-editor {
+      margin-top: 1.2rem;
+      border-radius: 10px;
+      border: 1.5px solid var(--color-border);
+      min-height: 300px;
+      overflow: hidden;
+      font-family: 'Fira Code', monospace, Consolas, 'Courier New', monospace;
+      user-select: text;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
+    }
+    /* Accessibility: visually hidden text */
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0,0,0,0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+    /* Buttons in panels */
+    button.action-btn {
+      all: unset;
+      cursor: pointer;
+      padding: 0.25rem 0.6rem;
       border-radius: 6px;
+      user-select: none;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background-color: var(--color-primary);
+      color: #fff;
+      box-shadow: 0 2px 6px var(--color-accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
     }
-
+    button.action-btn i {
+      font-size: 1rem;
+    }
+    button.action-btn:hover,
+    button.action-btn:focus-visible {
+      background-color: var(--color-accent);
+      outline: none;
+      box-shadow: 0 0 12px var(--color-accent);
+    }
     /* Responsive tweaks */
-    @media (max-width: 1000px) {
+    @media (max-width: 1200px) {
       main[role="main"] {
-        grid-template-columns: 200px 1fr;
-        grid-template-rows: auto auto;
-        grid-gap: 1rem;
-        height: auto;
+        grid-template-columns: 250px 1fr 320px;
       }
-
+      aside.sidebar {
+        max-width: 250px;
+      }
       aside.properties {
-        grid-column: 1 / -1;
-        height: 350px;
+        max-width: 320px;
       }
     }
-
-    @media (max-width: 600px) {
-      header[role="banner"] {
-        flex-wrap: wrap;
+    @media (max-width: 900px) {
+      main[role="main"] {
+        grid-template-columns: 1fr;
+        grid-template-rows: 300px 1fr 400px;
+        padding: 0.8rem;
       }
-
-      .toolbar-actions {
-        width: 100%;
-        justify-content: space-between;
-        margin-top: 0.5rem;
+      aside.sidebar,
+      aside.properties {
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+        padding: 0.5rem;
+        overflow-y: auto;
+      }
+      aside.sidebar {
+        grid-row: 1;
+      }
+      section.viewport {
+        grid-row: 2;
+        border-radius: 0;
+      }
+      aside.properties {
+        grid-row: 3;
+        border-radius: 0;
       }
     }
   </style>
 </head>
-<body data-theme="light">
-  <!-- Toolbar -->
-  <header role="banner" aria-label="Main toolbar">
-    <h1 id="app-title">Orgena Studio</h1>
-    <nav class="toolbar-actions" aria-label="Application actions">
-      <button type="button" aria-label="Create new project" title="New Project">
-        <i class="fa-solid fa-file"></i> New
-      </button>
-      <button type="button" aria-label="Open existing project" title="Open Project">
-        <i class="fa-solid fa-folder-open"></i> Open
-      </button>
-      <button type="button" aria-label="Save current project" title="Save Project">
-        <i class="fa-solid fa-floppy-disk"></i> Save
-      </button>
-      <button type="button" aria-label="Play / Run project" title="Play Project">
-        <i class="fa-solid fa-play"></i> Play
+<body data-theme="light" >
+  <header role="banner" aria-label="Orgena Studio main toolbar">
+    <h1 tabindex="0" aria-label="Orgena Studio Logo">Orgena Studio</h1>
+    <nav class="toolbar-actions" role="navigation" aria-label="Toolbar actions">
+      <button
+        id="btn-new-project"
+        class="action-btn"
+        aria-label="Create new project"
+        data-tooltip="Create New Project"
+        title="Create New Project"
+      >
+        <i class="fa-solid fa-file-circle-plus"></i> New
       </button>
       <button
-        type="button"
+        id="btn-save-project"
+        class="action-btn"
+        aria-label="Save current project"
+        data-tooltip="Save Project"
+        title="Save Project"
+      >
+        <i class="fa-solid fa-floppy-disk"></i> Save
+      </button>
+      <button
+        id="btn-open-project"
+        class="action-btn"
+        aria-label="Open existing project"
+        data-tooltip="Open Project"
+        title="Open Project"
+      >
+        <i class="fa-solid fa-folder-open"></i> Open
+      </button>
+      <button
         id="btn-theme-toggle"
+        class="action-btn"
         aria-label="Toggle dark or light mode"
         title="Toggle Dark/Light Mode"
       >
@@ -341,51 +477,69 @@
     </nav>
   </header>
 
-  <!-- Main application area -->
   <main role="main" aria-label="Orgena Studio main content area">
     <!-- Left Sidebar: Explorer + Assets -->
     <aside class="sidebar" aria-label="Explorer and Assets panel" tabindex="0">
-      <section aria-labelledby="explorer-title">
-        <h2 id="explorer-title">Explorer</h2>
-        <ul role="list" tabindex="0" aria-label="List of project objects">
-          <li tabindex="0"><i class="fa-solid fa-cubes"></i> Workspace</li>
-          <li tabindex="0"><i class="fa-solid fa-code"></i> Script1</li>
-          <li tabindex="0"><i class="fa-solid fa-tree"></i> Tree</li>
+      <section aria-labelledby="explorer-title" id="explorer-section">
+        <h2 id="explorer-title" tabindex="0">Explorer</h2>
+        <ul role="list" tabindex="0" aria-label="List of project objects" class="tree" id="explorer-list" aria-multiselectable="true" >
+          <li tabindex="0" class="expanded" role="treeitem" aria-expanded="true">
+            <i class="fa-solid fa-cubes"></i> Workspace
+            <ul role="group" class="tree">
+              <li tabindex="0" role="treeitem"><i class="fa-solid fa-code"></i> Script1</li>
+              <li tabindex="0" role="treeitem"><i class="fa-solid fa-tree"></i> Tree</li>
+            </ul>
+          </li>
         </ul>
       </section>
 
-      <section aria-labelledby="assets-title" style="margin-top: 2rem;">
-        <h2 id="assets-title">Assets</h2>
-        <ul role="list" tabindex="0" aria-label="List of assets">
-          <li tabindex="0"><i class="fa-solid fa-cube"></i> Cube</li>
-          <li tabindex="0"><i class="fa-solid fa-sphere"></i> Sphere</li>
-          <li tabindex="0"><i class="fa-solid fa-folder"></i> Models</li>
+      <section aria-labelledby="assets-title" id="assets-section" style="margin-top: 2rem;">
+        <h2 id="assets-title" tabindex="0">Assets</h2>
+        <ul role="list" tabindex="0" aria-label="List of assets" id="assets-list">
+          <li tabindex="0" class="asset-item"><i class="fa-solid fa-cube"></i> Cube</li>
+          <li tabindex="0" class="asset-item"><i class="fa-solid fa-sphere"></i> Sphere</li>
+          <li tabindex="0" class="asset-item"><i class="fa-solid fa-folder"></i> Models</li>
         </ul>
       </section>
     </aside>
 
     <!-- Center: 3D Viewport -->
     <section class="viewport" aria-label="3D viewport and scene view">
-      <h2>Scene Viewport</h2>
-      <div id="viewport-container" aria-live="polite" aria-atomic="true" role="region" aria-label="3D scene viewport">
+      <h2 tabindex="0">Scene Viewport</h2>
+      <div
+        id="viewport-container"
+        aria-live="polite"
+        aria-atomic="true"
+        role="region"
+        aria-label="3D scene viewport"
+        tabindex="0"
+        aria-describedby="viewport-desc"
+      >
         <!-- Three.js canvas will be injected here -->
+        <canvas id="three-canvas" tabindex="-1" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></canvas>
+      </div>
+      <div id="viewport-desc" class="sr-only">
+        The main 3D viewport for scene rendering and interaction.
       </div>
     </section>
 
     <!-- Right Sidebar: Properties + Script Editor -->
     <aside class="properties" aria-label="Properties and scripting panel" tabindex="0">
-      <h2>Properties</h2>
+      <h2 tabindex="0">Properties</h2>
 
-      <form class="properties-form" aria-label="Selected object properties">
+      <form class="properties-form" aria-label="Selected object properties" id="properties-form" autocomplete="off">
         <div>
           <label for="prop-name">Name</label>
           <input
             type="text"
             id="prop-name"
             name="prop-name"
-            autocomplete="off"
             value="Cube"
             aria-describedby="prop-name-desc"
+            autocomplete="off"
+            spellcheck="false"
+            required
+            tabindex="0"
           />
           <small id="prop-name-desc" class="sr-only">Set the name of the selected object</small>
         </div>
@@ -396,9 +550,14 @@
             type="text"
             id="prop-position"
             name="prop-position"
-            autocomplete="off"
             value="0, 1, 0"
             aria-describedby="prop-position-desc"
+            autocomplete="off"
+            spellcheck="false"
+            pattern="^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$"
+            required
+            tabindex="0"
+            title="Enter position as x, y, z (e.g. 0, 1, 0)"
           />
           <small id="prop-position-desc" class="sr-only">Set the position coordinates</small>
         </div>
@@ -411,34 +570,272 @@
             name="prop-color"
             value="#ff0000"
             aria-describedby="prop-color-desc"
+            tabindex="0"
           />
           <small id="prop-color-desc" class="sr-only">Set the object color</small>
         </div>
       </form>
 
-      <h2 style="margin-top: 1.5rem;">Script</h2>
-      <div id="script-editor" role="textbox" aria-multiline="true" aria-label="Script editor">
-        <!-- Monaco editor or other editor goes here -->
+      <h2 tabindex="0" style="margin-top: 1.5rem;">Script</h2>
+      <div
+        id="script-editor"
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Script editor"
+        tabindex="0"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-describedby="script-editor-desc"
+      >
+        <!-- Monaco editor will be injected here -->
+      </div>
+      <div id="script-editor-desc" class="sr-only">
+        The script editor allows editing of the Lua script attached to the selected object.
       </div>
     </aside>
   </main>
 
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>
+
   <script>
     // Theme toggle button logic
-    const bodyEl = document.body;
-    const btnTheme = document.getElementById("btn-theme-toggle");
-    const icon = btnTheme.querySelector("i");
+    (() => {
+      const bodyEl = document.body;
+      const btnTheme = document.getElementById("btn-theme-toggle");
+      const icon = btnTheme.querySelector("i");
+      const storedTheme = localStorage.getItem("orgena-theme");
 
-    btnTheme.addEventListener("click", () => {
-      const isLight = bodyEl.getAttribute("data-theme") === "light";
-      if (isLight) {
-        bodyEl.setAttribute("data-theme", "dark");
-        icon.classList.replace("fa-moon", "fa-sun");
-      } else {
-        bodyEl.setAttribute("data-theme", "light");
-        icon.classList.replace("fa-sun", "fa-moon");
+      if (storedTheme) {
+        bodyEl.setAttribute("data-theme", storedTheme);
+        if (storedTheme === "dark") {
+          icon.classList.replace("fa-moon", "fa-sun");
+        } else {
+          icon.classList.replace("fa-sun", "fa-moon");
+        }
       }
-    });
+
+      btnTheme.addEventListener("click", () => {
+        const isLight = bodyEl.getAttribute("data-theme") === "light";
+        if (isLight) {
+          bodyEl.setAttribute("data-theme", "dark");
+          icon.classList.replace("fa-moon", "fa-sun");
+          localStorage.setItem("orgena-theme", "dark");
+        } else {
+          bodyEl.setAttribute("data-theme", "light");
+          icon.classList.replace("fa-sun", "fa-moon");
+          localStorage.setItem("orgena-theme", "light");
+        }
+      });
+    })();
+
+    // Explorer tree expand/collapse
+    (() => {
+      const explorerList = document.getElementById("explorer-list");
+
+      explorerList.querySelectorAll("li").forEach((li) => {
+        // If li has children ul, make expandable
+        const childUl = li.querySelector("ul");
+        if (childUl) {
+          li.classList.add("expanded");
+          li.setAttribute("aria-expanded", "true");
+          li.setAttribute("role", "treeitem");
+          childUl.setAttribute("role", "group");
+          li.addEventListener("click", (e) => {
+            if (e.target === li || e.target === li.firstChild || e.target === li.querySelector("i")) {
+              e.stopPropagation();
+              const expanded = li.getAttribute("aria-expanded") === "true";
+              if (expanded) {
+                li.setAttribute("aria-expanded", "false");
+                li.classList.remove("expanded");
+                li.classList.add("collapsed");
+              } else {
+                li.setAttribute("aria-expanded", "true");
+                li.classList.remove("collapsed");
+                li.classList.add("expanded");
+              }
+            }
+          });
+          li.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              li.click();
+            }
+          });
+        } else {
+          li.setAttribute("role", "treeitem");
+          li.setAttribute("aria-expanded", "false");
+        }
+      });
+    })();
+
+    // Monaco editor init for Lua scripting
+    (() => {
+      require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
+      require(['vs/editor/editor.main'], function () {
+        window.editor = monaco.editor.create(document.getElementById('script-editor'), {
+          value: `-- Orgena Studio Lua script\nfunction update()\n  -- Your code here\nend`,
+          language: 'lua',
+          theme: document.body.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs-light',
+          automaticLayout: true,
+          fontSize: 14,
+          fontFamily: "'Fira Code', monospace",
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          smoothScrolling: true,
+          wordWrap: 'on',
+          lineNumbers: 'on',
+          roundedSelection: true,
+          cursorStyle: 'line',
+          cursorBlinking: 'blink',
+          renderIndentGuides: true,
+          tabSize: 2,
+          insertSpaces: true,
+          autoClosingBrackets: 'always',
+          suggestOnTriggerCharacters: true,
+        });
+
+        // Sync theme changes with Monaco
+        const themeToggleBtn = document.getElementById('btn-theme-toggle');
+        themeToggleBtn.addEventListener('click', () => {
+          setTimeout(() => {
+            const theme = document.body.getAttribute('data-theme');
+            monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs-light');
+          }, 150);
+        });
+      });
+    })();
+
+    // Three.js 3D viewport init
+    (() => {
+      const container = document.getElementById("viewport-container");
+      const canvas = document.getElementById("three-canvas");
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+      // Set renderer size & pixel ratio
+      function resize() {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(window.devicePixelRatio);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(5, 10, 7);
+      directionalLight.castShadow = true;
+      scene.add(directionalLight);
+
+      // Grid helper
+      const grid = new THREE.GridHelper(20, 20, 0x444444, 0x888888);
+      scene.add(grid);
+
+      // Axes helper
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+
+      // Objects dictionary for reference
+      const objects = {};
+
+      // Create example Cube
+      const geometry = new THREE.BoxGeometry();
+      const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+      const cube = new THREE.Mesh(geometry, material);
+      cube.name = "Cube";
+      cube.position.set(0, 1, 0);
+      cube.castShadow = true;
+      cube.receiveShadow = true;
+      scene.add(cube);
+      objects[cube.name] = cube;
+
+      // Animate
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      // Initial camera position
+      camera.position.set(5, 5, 5);
+      controls.target.set(0, 1, 0);
+      controls.update();
+
+      animate();
+
+      // Property form binding
+      const form = document.getElementById("properties-form");
+      const inputName = document.getElementById("prop-name");
+      const inputPosition = document.getElementById("prop-position");
+      const inputColor = document.getElementById("prop-color");
+
+      function updateObjectFromForm() {
+        const obj = objects[inputName.value] || cube;
+        obj.name = inputName.value;
+        // Parse position
+        const posStr = inputPosition.value.trim();
+        const posMatch = posStr.match(/^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/);
+        if (posMatch) {
+          obj.position.set(parseFloat(posMatch[1]), parseFloat(posMatch[3]), parseFloat(posMatch[5]));
+        }
+        // Update color
+        obj.material.color.set(inputColor.value);
+      }
+
+      form.addEventListener("input", () => {
+        updateObjectFromForm();
+      });
+
+      // Explorer list click to select object and load properties
+      const explorerListEl = document.getElementById("explorer-list");
+      explorerListEl.addEventListener("click", (e) => {
+        let target = e.target;
+        while (target && target.tagName !== 'LI') {
+          target = target.parentElement;
+        }
+        if (target && objects[target.textContent.trim()]) {
+          const obj = objects[target.textContent.trim()];
+          inputName.value = obj.name;
+          inputPosition.value = `${obj.position.x.toFixed(2)}, ${obj.position.y.toFixed(2)}, ${obj.position.z.toFixed(2)}`;
+          inputColor.value = `#${obj.material.color.getHexString()}`;
+          inputName.focus();
+        }
+      });
+
+      // Keyboard accessibility for explorer
+      explorerListEl.addEventListener("keydown", (e) => {
+        const current = document.activeElement;
+        if (current.tagName === "LI") {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            const next = current.nextElementSibling || current.parentElement.firstElementChild;
+            if (next) next.focus();
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            const prev = current.previousElementSibling || current.parentElement.lastElementChild;
+            if (prev) prev.focus();
+          }
+        }
+      });
+    })();
+
   </script>
+
+  <!-- FontAwesome CDN for icons -->
+  <script
+    src="https://kit.fontawesome.com/a076d05399.js"
+    crossorigin="anonymous"
+    defer
+  ></script>
 </body>
 </html>
