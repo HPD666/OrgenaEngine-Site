@@ -15,322 +15,18 @@
       display: flex;
       align-items: center;
     }
-    #top-nav > div { margin-right: 20px; cursor: pointer; }
-    #container {
-      display: grid;
-      grid-template-columns: 220px 1fr 220px;
-      grid-template-rows: calc(100% - 100px) 100px;
-      grid-template-areas: 
-        "explorer viewport properties"
-        "script script script";
-      height: calc(100% - 40px);
-    }
-    #explorer {
-      grid-area: explorer;
-      background: #f0f0f0;
-      border-right: 1px solid #ccc;
-      padding: 10px;
-      overflow-y: auto;
-    }
-    #viewport {
-      grid-area: viewport;
-      background: #222;
-      position: relative;
-    }
-    #properties {
-      grid-area: properties;
-      background: #f9f9f9;
-      border-left: 1px solid #ccc;
-      padding: 10px;
-      overflow-y: auto;
-    }
-    #script {
-      grid-area: script;
-      background: #1e1e1e;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-    }
-    #script-editor {
-      flex: 1;
-      background: #252526;
-      color: #d4d4d4;
-      border: none;
-      padding: 10px;
-      font-family: Consolas, monospace;
-      resize: none;
-    }
-    #run-script {
-      margin-top: 5px;
-      padding: 10px;
-      background: #0e639c;
-      color: #fff;
-      border: none;
+    #top-nav > div {
+      margin-right: 20px;
       cursor: pointer;
+      user-select: none;
     }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    .object-item {
-      padding: 5px;
-      margin-bottom: 5px;
-      background: #ddd;
-      cursor: pointer;
-    }
-    .object-item.selected {
-      background: #bbb;
-    }
-    .prop-field {
-      margin-bottom: 10px;
-    }
-    .prop-field label {
-      display: block;
-      margin-bottom: 3px;
-    }
-    .prop-field input {
-      width: 100%;
-      padding: 5px;
-    }
-    button {
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div id="top-nav">
-    <div>File</div>
-    <div>Edit</div>
-    <div>View</div>
-    <div>Help</div>
-  </div>
-  <div id="container">
-    <div id="explorer">
-      <button id="add-cube">Add Cube</button>
-      <div id="explorer-list"></div>
-    </div>
-    <div id="viewport">
-      <canvas id="scene-canvas"></canvas>
-    </div>
-    <div id="properties">
-      <h3>Properties</h3>
-      <div id="properties-content">Select an object to edit.</div>
-    </div>
-    <div id="script">
-      <textarea id="script-editor">// Write your script here...
-console.log('Script executed');</textarea>
-      <button id="run-script">Run Script</button>
-    </div>
-  </div>
-  <script>
-    // Canvas Setup
-    const canvas = document.getElementById('scene-canvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    function resize() {
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Scene Objects & Explorer Management
-    let objects = [];
-    let selectedObject = null;
-    let nextId = 1;
-
-    // Default Cube Data
-    const cubeVertices = [
-      {x: -1, y: -1, z: -1},
-      {x:  1, y: -1, z: -1},
-      {x:  1, y:  1, z: -1},
-      {x: -1, y:  1, z: -1},
-      {x: -1, y: -1, z:  1},
-      {x:  1, y: -1, z:  1},
-      {x:  1, y:  1, z:  1},
-      {x: -1, y:  1, z:  1}
-    ];
-    const cubeEdges = [
-      [0,1],[1,2],[2,3],[3,0],
-      [4,5],[5,6],[6,7],[7,4],
-      [0,4],[1,5],[2,6],[3,7]
-    ];
-
-    // Add Cube Function
-    function addCube() {
-      const cube = {
-        id: nextId++,
-        type: 'cube',
-        position: {x: 0, y: 0, z: 5},
-        rotation: 0,
-        autoRotate: true
-      };
-      objects.push(cube);
-      updateExplorer();
-    }
-
-    // Update Explorer List
-    function updateExplorer() {
-      const list = document.getElementById('explorer-list');
-      list.innerHTML = '';
-      objects.forEach(obj => {
-        const item = document.createElement('div');
-        item.className = 'object-item' + (selectedObject && selectedObject.id === obj.id ? ' selected' : '');
-        item.textContent = obj.type + ' #' + obj.id;
-        item.onclick = () => {
-          selectedObject = obj;
-          updateExplorer();
-          updateProperties();
-        };
-        list.appendChild(item);
-      });
-    }
-
-    document.getElementById('add-cube').addEventListener('click', addCube);
-
-    // Update Properties Panel
-    function updateProperties() {
-      const propDiv = document.getElementById('properties-content');
-      if (!selectedObject) {
-        propDiv.innerHTML = 'Select an object to edit.';
-        return;
-      }
-      propDiv.innerHTML = '';
-      const fields = [
-        { label: 'Position X', key: 'x', value: selectedObject.position.x },
-        { label: 'Position Y', key: 'y', value: selectedObject.position.y },
-        { label: 'Position Z', key: 'z', value: selectedObject.position.z },
-        { label: 'Rotation (radians)', key: 'rotation', value: selectedObject.rotation }
-      ];
-      fields.forEach(field => {
-        const div = document.createElement('div');
-        div.className = 'prop-field';
-        div.innerHTML = '<label>' + field.label + '</label><input type="number" step="0.1" value="'+ field.value +'" id="prop-' + field.key + '">';
-        propDiv.appendChild(div);
-      });
-      const updateBtn = document.createElement('button');
-      updateBtn.textContent = 'Update Properties';
-      updateBtn.onclick = () => {
-        selectedObject.position.x = parseFloat(document.getElementById('prop-x').value);
-        selectedObject.position.y = parseFloat(document.getElementById('prop-y').value);
-        selectedObject.position.z = parseFloat(document.getElementById('prop-z').value);
-        selectedObject.rotation = parseFloat(document.getElementById('prop-rotation').value);
-      };
-      propDiv.appendChild(updateBtn);
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = 'Delete Object';
-      deleteBtn.style.marginLeft = '10px';
-      deleteBtn.onclick = () => {
-        objects = objects.filter(o => o.id !== selectedObject.id);
-        selectedObject = null;
-        updateExplorer();
-        updateProperties();
-      };
-      propDiv.appendChild(deleteBtn);
-    }
-
-    // 3D Math Functions
-    function rotateY(vertex, angle) {
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      return {
-        x: vertex.x * cos - vertex.z * sin,
-        y: vertex.y,
-        z: vertex.x * sin + vertex.z * cos
-      };
-    }
-    function translate(vertex, pos) {
-      return {
-        x: vertex.x + pos.x,
-        y: vertex.y + pos.y,
-        z: vertex.z + pos.z
-      };
-    }
-    function project(vertex) {
-      const distance = 5;
-      const z = vertex.z + distance;
-      return {
-        x: (vertex.x * (width / 2)) / z + width / 2,
-        y: (vertex.y * (width / 2)) / z + height / 2
-      };
-    }
-
-    // Draw Object by Type
-    function drawObject(obj) {
-      if (obj.type === 'cube') {
-        const transformed = cubeVertices.map(v => {
-          let r = rotateY(v, obj.rotation);
-          r = translate(r, obj.position);
-          return project(r);
-        });
-        ctx.strokeStyle = 'white';
-        cubeEdges.forEach(edge => {
-          const p1 = transformed[edge[0]];
-          const p2 = transformed[edge[1]];
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        });
-      }
-      // Future object types can be added here.
-    }
-
-    // Animation Loop
-    function animate() {
-      ctx.clearRect(0, 0, width, height);
-      objects.forEach(obj => {
-        if (obj.autoRotate) {
-          obj.rotation += 0.01;
-        }
-        drawObject(obj);
-      });
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    // Script Editor Functionality
-    document.getElementById('run-script').addEventListener('click', function() {
-      try {
-        const code = document.getElementById('script-editor').value;
-        eval(code);
-      } catch(e) {
-        console.error(e);
-      }
-    });
-
-    // Initialize with one cube for demo purposes
-    addCube();
-  </script>
-</body>
-</html>
-```
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Max Roblox Studio Clone</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; font-family: Arial, sans-serif; overflow: hidden; }
-    #top-nav {
-      background: #333;
-      color: #fff;
-      height: 40px;
-      line-height: 40px;
-      padding: 0 10px;
-      display: flex;
-      align-items: center;
-    }
-    #top-nav > div { margin-right: 20px; cursor: pointer; }
     #container {
       display: grid;
       grid-template-columns: 220px 1fr 220px;
       grid-template-rows: calc(100% - 40px - 100px) 100px;
       grid-template-areas: 
-        "explorer viewport properties"
-        "script script script";
+         "explorer viewport properties"
+         "script script script";
       height: calc(100% - 40px);
     }
     #explorer {
@@ -345,7 +41,6 @@ console.log('Script executed');</textarea>
       grid-area: viewport;
       background: #222;
       position: relative;
-      cursor: crosshair;
     }
     #properties {
       grid-area: properties;
@@ -378,24 +73,45 @@ console.log('Script executed');</textarea>
       border: none;
       cursor: pointer;
     }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
+    canvas { width: 100%; height: 100%; display: block; }
     .object-item {
       padding: 5px;
       margin-bottom: 5px;
       background: #ddd;
       cursor: pointer;
+      user-select: none;
     }
     .object-item.selected { background: #bbb; }
     .prop-field { margin-bottom: 10px; }
     .prop-field label { display: block; margin-bottom: 3px; }
     .prop-field input { width: 100%; padding: 5px; }
     button { cursor: pointer; margin-top: 5px; }
-    /* Hide load input */
     #load-input { display: none; }
+    /* Console Output Panel */
+    #console {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 100px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 12px;
+      overflow-y: auto;
+      padding: 5px;
+      box-sizing: border-box;
+    }
+    #clear-console {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #f00;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
@@ -403,6 +119,7 @@ console.log('Script executed');</textarea>
     <div id="save-scene">Save Scene</div>
     <div id="load-scene">Load Scene</div>
     <div id="reset-camera">Reset Camera</div>
+    <div id="toggle-physics">Toggle Physics (Off)</div>
   </div>
   <div id="container">
     <div id="explorer">
@@ -424,8 +141,9 @@ console.log('Script executed');</textarea>
     </div>
   </div>
   <input type="file" id="load-input" accept=".json">
+  <div id="console"><button id="clear-console">Clear</button></div>
   <script>
-    // Canvas Setup and Resize
+    // Canvas Setup & Resize
     const canvas = document.getElementById('scene-canvas');
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -436,13 +154,34 @@ console.log('Script executed');</textarea>
     window.addEventListener('resize', resize);
     resize();
 
-    // Global variables: Scene objects and Camera
+    // Global Variables: Scene, Camera, Physics, Timing
     let objects = [];
     let selectedObject = null;
     let nextId = 1;
     let camera = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 };
+    let physicsOn = false;
+    const gravity = -9.8;
+    let lastTime = performance.now();
 
-    // Cube Geometry
+    // Override Console.log to output to in-app console
+    const consoleDiv = document.getElementById('console');
+    const originalLog = console.log;
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      const msg = args.join(' ');
+      const div = document.createElement('div');
+      div.textContent = msg;
+      consoleDiv.appendChild(div);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    };
+    document.getElementById('clear-console').addEventListener('click', () => {
+      consoleDiv.innerHTML = '<button id="clear-console">Clear</button>';
+      document.getElementById('clear-console').addEventListener('click', () => {
+        consoleDiv.innerHTML = '<button id="clear-console">Clear</button>';
+      });
+    });
+    
+    // Geometry for Cube
     const cubeVertices = [
       {x: -1, y: -1, z: -1},
       {x:  1, y: -1, z: -1},
@@ -459,14 +198,16 @@ console.log('Script executed');</textarea>
       [0,4],[1,5],[2,6],[3,7]
     ];
 
-    // Object Add Functions
+    // Add Object Functions
     function addCube() {
       const cube = {
         id: nextId++,
         type: 'cube',
-        position: {x: 0, y: 0, z: 5},
+        position: { x: 0, y: 0, z: 5 },
         rotation: 0,
-        autoRotate: true
+        autoRotate: true,
+        dynamic: false,
+        velocity: { x: 0, y: 0, z: 0 }
       };
       objects.push(cube);
       updateExplorer();
@@ -475,10 +216,12 @@ console.log('Script executed');</textarea>
       const sphere = {
         id: nextId++,
         type: 'sphere',
-        position: {x: 2, y: 0, z: 5},
+        position: { x: 2, y: 0, z: 5 },
         rotation: 0,
         radius: 1,
-        autoRotate: true
+        autoRotate: true,
+        dynamic: false,
+        velocity: { x: 0, y: 0, z: 0 }
       };
       objects.push(sphere);
       updateExplorer();
@@ -486,7 +229,7 @@ console.log('Script executed');</textarea>
     document.getElementById('add-cube').addEventListener('click', addCube);
     document.getElementById('add-sphere').addEventListener('click', addSphere);
 
-    // Explorer Panel Update
+    // Explorer Panel
     function updateExplorer() {
       const list = document.getElementById('explorer-list');
       list.innerHTML = '';
@@ -503,7 +246,7 @@ console.log('Script executed');</textarea>
       });
     }
 
-    // Update Properties Panel
+    // Properties Panel
     function updateProperties() {
       const propDiv = document.getElementById('properties-content');
       if (!selectedObject) {
@@ -511,22 +254,25 @@ console.log('Script executed');</textarea>
         return;
       }
       propDiv.innerHTML = '';
-      // Create fields based on object type
       const fields = [];
       fields.push({ label: 'Position X', key: 'x', value: selectedObject.position.x });
       fields.push({ label: 'Position Y', key: 'y', value: selectedObject.position.y });
       fields.push({ label: 'Position Z', key: 'z', value: selectedObject.position.z });
-      if(selectedObject.type === 'cube') {
+      if (selectedObject.type === 'cube' || selectedObject.type === 'sphere') {
         fields.push({ label: 'Rotation (radians)', key: 'rotation', value: selectedObject.rotation });
       }
-      if(selectedObject.type === 'sphere') {
+      if (selectedObject.type === 'sphere') {
         fields.push({ label: 'Radius', key: 'radius', value: selectedObject.radius });
-        fields.push({ label: 'Rotation (radians)', key: 'rotation', value: selectedObject.rotation });
       }
+      fields.push({ label: 'Dynamic', key: 'dynamic', value: selectedObject.dynamic, type: 'checkbox' });
       fields.forEach(field => {
         const div = document.createElement('div');
         div.className = 'prop-field';
-        div.innerHTML = '<label>' + field.label + '</label><input type="number" step="0.1" id="prop-' + field.key + '" value="'+ field.value +'">';
+        if (field.type === 'checkbox') {
+          div.innerHTML = `<label>${field.label}</label><input type="checkbox" id="prop-${field.key}" ${field.value ? 'checked' : ''}>`;
+        } else {
+          div.innerHTML = `<label>${field.label}</label><input type="number" step="0.1" id="prop-${field.key}" value="${field.value}">`;
+        }
         propDiv.appendChild(div);
       });
       const updateBtn = document.createElement('button');
@@ -535,12 +281,13 @@ console.log('Script executed');</textarea>
         selectedObject.position.x = parseFloat(document.getElementById('prop-x').value);
         selectedObject.position.y = parseFloat(document.getElementById('prop-y').value);
         selectedObject.position.z = parseFloat(document.getElementById('prop-z').value);
-        if(selectedObject.type === 'cube' || selectedObject.type === 'sphere'){
+        if (selectedObject.type === 'cube' || selectedObject.type === 'sphere') {
           selectedObject.rotation = parseFloat(document.getElementById('prop-rotation').value);
         }
-        if(selectedObject.type === 'sphere'){
+        if (selectedObject.type === 'sphere') {
           selectedObject.radius = parseFloat(document.getElementById('prop-radius').value);
         }
+        selectedObject.dynamic = document.getElementById('prop-dynamic').checked;
       };
       propDiv.appendChild(updateBtn);
       const deleteBtn = document.createElement('button');
@@ -565,7 +312,7 @@ console.log('Script executed');</textarea>
       propDiv.appendChild(dupBtn);
     }
 
-    // 3D Math Functions
+    // 3D Math: Rotate, Transform & Project
     function rotateY(vertex, angle) {
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
@@ -575,24 +322,20 @@ console.log('Script executed');</textarea>
         z: vertex.x * sin + vertex.z * cos
       };
     }
-    // Camera transformation: Convert world coordinate to camera coordinate.
     function transformToCamera(v, cam) {
       let x = v.x - cam.x;
       let y = v.y - cam.y;
       let z = v.z - cam.z;
-      // Inverse yaw rotation (rotate around Y axis)
       let cosYaw = Math.cos(-cam.yaw);
       let sinYaw = Math.sin(-cam.yaw);
       let x1 = x * cosYaw - z * sinYaw;
       let z1 = x * sinYaw + z * cosYaw;
-      // Inverse pitch rotation (rotate around X axis)
       let cosPitch = Math.cos(-cam.pitch);
       let sinPitch = Math.sin(-cam.pitch);
       let y1 = y * cosPitch - z1 * sinPitch;
       let z2 = y * sinPitch + z1 * cosPitch;
       return { x: x1, y: y1, z: z2 };
     }
-    // Projection Function: Basic perspective projection.
     function project(vertex) {
       const fov = 90;
       const fovFactor = width / 2 / Math.tan((fov / 2) * Math.PI / 180);
@@ -602,6 +345,38 @@ console.log('Script executed');</textarea>
       };
     }
 
+    // Draw Grid (Ground Plane at y = 0)
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(200,200,200,0.3)';
+      ctx.lineWidth = 1;
+      const fov = 90;
+      const fovFactor = width / 2 / Math.tan((fov / 2) * Math.PI / 180);
+      for (let x = -20; x <= 20; x += 2) {
+        let p1 = transformToCamera({ x: x, y: 0, z: -20 }, camera);
+        let p2 = transformToCamera({ x: x, y: 0, z: 20 }, camera);
+        if (p1.z > 0 && p2.z > 0) {
+          let proj1 = project(p1);
+          let proj2 = project(p2);
+          ctx.beginPath();
+          ctx.moveTo(proj1.x, proj1.y);
+          ctx.lineTo(proj2.x, proj2.y);
+          ctx.stroke();
+        }
+      }
+      for (let z = -20; z <= 20; z += 2) {
+        let p1 = transformToCamera({ x: -20, y: 0, z: z }, camera);
+        let p2 = transformToCamera({ x: 20, y: 0, z: z }, camera);
+        if (p1.z > 0 && p2.z > 0) {
+          let proj1 = project(p1);
+          let proj2 = project(p2);
+          ctx.beginPath();
+          ctx.moveTo(proj1.x, proj1.y);
+          ctx.lineTo(proj2.x, proj2.y);
+          ctx.stroke();
+        }
+      }
+    }
+
     // Draw Functions for Objects
     function drawCube(obj) {
       const transformed = cubeVertices.map(v => {
@@ -609,20 +384,12 @@ console.log('Script executed');</textarea>
         let world = { x: r.x + obj.position.x, y: r.y + obj.position.y, z: r.z + obj.position.z };
         return transformToCamera(world, camera);
       });
-      const fov = 90;
-      const fovFactor = width / 2 / Math.tan((fov / 2) * Math.PI / 180);
-      const projected = transformed.map(v => {
-        if(v.z <= 0) return null;
-        return {
-          x: v.x * fovFactor / v.z + width / 2,
-          y: -v.y * fovFactor / v.z + height / 2
-        };
-      });
+      const projected = transformed.map(v => (v.z <= 0 ? null : project(v)));
       ctx.strokeStyle = 'white';
       cubeEdges.forEach(edge => {
         const p1 = projected[edge[0]];
         const p2 = projected[edge[1]];
-        if(p1 && p2) {
+        if (p1 && p2) {
           ctx.beginPath();
           ctx.moveTo(p1.x, p1.y);
           ctx.lineTo(p2.x, p2.y);
@@ -631,88 +398,113 @@ console.log('Script executed');</textarea>
       });
     }
     function drawSphere(obj) {
-      // Transform center
-      let center = transformToCamera(obj.position, camera);
-      if(center.z <= 0) return;
+      let centerCam = transformToCamera(obj.position, camera);
+      if (centerCam.z <= 0) return;
+      const projCenter = project(centerCam);
       const fov = 90;
       const fovFactor = width / 2 / Math.tan((fov / 2) * Math.PI / 180);
-      const proj = {
-        x: center.x * fovFactor / center.z + width / 2,
-        y: -center.y * fovFactor / center.z + height / 2
-      };
-      const projRadius = obj.radius * fovFactor / center.z;
+      const projRadius = obj.radius * fovFactor / centerCam.z;
       ctx.strokeStyle = 'cyan';
       ctx.beginPath();
-      ctx.arc(proj.x, proj.y, projRadius, 0, Math.PI * 2);
+      ctx.arc(projCenter.x, projCenter.y, projRadius, 0, Math.PI * 2);
       ctx.stroke();
     }
     function drawObject(obj) {
-      if(obj.type === 'cube') drawCube(obj);
-      else if(obj.type === 'sphere') drawSphere(obj);
+      if (obj.type === 'cube') drawCube(obj);
+      else if (obj.type === 'sphere') drawSphere(obj);
     }
 
-    // Camera Controls via Keyboard
+    // Camera Keyboard Controls
     let keys = {};
     document.addEventListener('keydown', e => { keys[e.key] = true; });
     document.addEventListener('keyup', e => { keys[e.key] = false; });
     function updateCamera() {
-      let speed = 0.1;
+      const speed = 0.1;
       let forward = { x: Math.sin(camera.yaw), z: Math.cos(camera.yaw) };
       let right = { x: Math.cos(camera.yaw), z: -Math.sin(camera.yaw) };
-      if(keys['w'] || keys['W']) {
+      if (keys['w'] || keys['W']) {
         camera.x += forward.x * speed;
         camera.z += forward.z * speed;
       }
-      if(keys['s'] || keys['S']) {
+      if (keys['s'] || keys['S']) {
         camera.x -= forward.x * speed;
         camera.z -= forward.z * speed;
       }
-      if(keys['a'] || keys['A']) {
+      if (keys['a'] || keys['A']) {
         camera.x -= right.x * speed;
         camera.z -= right.z * speed;
       }
-      if(keys['d'] || keys['D']) {
+      if (keys['d'] || keys['D']) {
         camera.x += right.x * speed;
         camera.z += right.z * speed;
       }
-      if(keys['ArrowLeft']) camera.yaw -= 0.03;
-      if(keys['ArrowRight']) camera.yaw += 0.03;
-      if(keys['ArrowUp']) camera.pitch += 0.03;
-      if(keys['ArrowDown']) camera.pitch -= 0.03;
     }
 
-    // Mouse Picking: Select object by clicking on viewport
-    canvas.addEventListener('click', function(e) {
+    // Camera Drag Controls (Hold Shift to Orbit)
+    let dragging = false, lastMouseX = 0, lastMouseY = 0;
+    canvas.addEventListener('mousedown', e => {
+      if (e.shiftKey) {
+        dragging = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+      }
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (dragging) {
+        let dx = e.clientX - lastMouseX;
+        let dy = e.clientY - lastMouseY;
+        camera.yaw -= dx * 0.005;
+        camera.pitch -= dy * 0.005;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+      }
+    });
+    canvas.addEventListener('mouseup', () => { dragging = false; });
+    canvas.addEventListener('mouseleave', () => { dragging = false; });
+    canvas.addEventListener('contextmenu', e => { e.preventDefault(); });
+
+    // Mouse Picking for Object Selection
+    canvas.addEventListener('click', e => {
       let rect = canvas.getBoundingClientRect();
       let clickX = e.clientX - rect.left;
       let clickY = e.clientY - rect.top;
       let picked = null;
       let minDist = Infinity;
       objects.forEach(obj => {
-        let worldPos = obj.position;
-        let camCoord = transformToCamera(worldPos, camera);
-        if(camCoord.z <= 0) return;
-        const fov = 90;
-        const fovFactor = width / 2 / Math.tan((fov / 2) * Math.PI / 180);
-        let proj = {
-          x: camCoord.x * fovFactor / camCoord.z + width / 2,
-          y: -camCoord.y * fovFactor / camCoord.z + height / 2
-        };
-        let dist = Math.hypot(proj.x - clickX, proj.y - clickY);
-        if(dist < 30 && dist < minDist) {
+        let camPos = transformToCamera(obj.position, camera);
+        if (camPos.z <= 0) return;
+        const proj = project(camPos);
+        const dist = Math.hypot(proj.x - clickX, proj.y - clickY);
+        if (dist < 30 && dist < minDist) {
           minDist = dist;
           picked = obj;
         }
       });
-      if(picked) {
+      if (picked) {
         selectedObject = picked;
         updateExplorer();
         updateProperties();
       }
     });
 
-    // Scene Save/Load and Camera Reset
-    document.getElementById('save-scene').addEventListener('click', function(){
+    // Physics Simulation
+    function updatePhysics(dt) {
+      objects.forEach(obj => {
+        if (obj.dynamic && physicsOn) {
+          obj.velocity.y += gravity * dt;
+          obj.position.x += obj.velocity.x * dt;
+          obj.position.y += obj.velocity.y * dt;
+          obj.position.z += obj.velocity.z * dt;
+          if (obj.position.y < -2) {
+            obj.position.y = -2;
+            obj.velocity.y = 0;
+          }
+        }
+      });
+    }
+
+    // Top Navigation Actions: Save, Load, Reset, Toggle Physics
+    document.getElementById('save-scene').addEventListener('click', () => {
       const sceneData = { objects: objects, camera: camera };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sceneData));
       const dlAnchorElem = document.createElement('a');
@@ -720,53 +512,59 @@ console.log('Script executed');</textarea>
       dlAnchorElem.setAttribute("download", "scene.json");
       dlAnchorElem.click();
     });
-    document.getElementById('load-scene').addEventListener('click', function(){
+    document.getElementById('load-scene').addEventListener('click', () => {
       document.getElementById('load-input').click();
     });
-    document.getElementById('load-input').addEventListener('change', function(e){
+    document.getElementById('load-input').addEventListener('change', e => {
       const file = e.target.files[0];
-      if(file) {
+      if (file) {
         const reader = new FileReader();
-        reader.onload = function(ev){
+        reader.onload = ev => {
           try {
             const sceneData = JSON.parse(ev.target.result);
             objects = sceneData.objects || [];
-            camera = sceneData.camera || { x:0, y:0, z:0, yaw:0, pitch:0 };
+            camera = sceneData.camera || { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 };
             updateExplorer();
-          } catch(err) { console.error(err); }
-        }
+          } catch (err) { console.error(err); }
+        };
         reader.readAsText(file);
       }
     });
-    document.getElementById('reset-camera').addEventListener('click', function(){
+    document.getElementById('reset-camera').addEventListener('click', () => {
       camera = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0 };
     });
+    document.getElementById('toggle-physics').addEventListener('click', function() {
+      physicsOn = !physicsOn;
+      this.textContent = physicsOn ? 'Toggle Physics (On)' : 'Toggle Physics (Off)';
+    });
 
-    // Script Editor execution
-    document.getElementById('run-script').addEventListener('click', function(){
+    // Script Editor
+    document.getElementById('run-script').addEventListener('click', () => {
       try {
         const code = document.getElementById('script-editor').value;
         eval(code);
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
     });
 
     // Animation Loop
-    function animate() {
+    function animate(now) {
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
       updateCamera();
+      updatePhysics(dt);
       ctx.clearRect(0, 0, width, height);
+      drawGrid();
       objects.forEach(obj => {
-        if(obj.autoRotate) {
-          obj.rotation += 0.01;
-        }
+        if (obj.autoRotate) obj.rotation += 0.01;
         drawObject(obj);
       });
       requestAnimationFrame(animate);
     }
-    animate();
+    requestAnimationFrame(animate);
 
-    // Initialize Scene with a demo cube and sphere
+    // Initialize with Demo Objects
     addCube();
     addSphere();
   </script>
