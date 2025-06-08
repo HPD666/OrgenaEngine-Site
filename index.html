@@ -1,841 +1,505 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Orgena Studio - Professional Game Editor</title>
-
-  <!-- FontAwesome for icons -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    integrity="sha512-nxqTRM1dR6CZp4p1m0X5Ku4w/mzXTtZVeI6x46N9MQ2wyK7DUtkJ5jFHrKPsYCFx3RVjf3TkAqUl6PY7evQXbA=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
-  
-  <!-- Monaco Editor CDN -->
-  <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/editor/editor.main.css" />
-  
-  <style>
-    :root {
-      --color-bg: #fefefe;
-      --color-text: #1a1a1a;
-      --color-panel-bg: #f7f7f7;
-      --color-border: #d0d0d0;
-      --color-primary: #3b82f6;
-      --color-accent: #2563eb;
-      --color-hover: #e0e7ff;
-      --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      --shadow-light: rgba(0,0,0,0.12);
-      --transition: 0.3s ease;
-      --scrollbar-bg: #ccc;
-      --scrollbar-thumb: #888;
-    }
-    [data-theme="dark"] {
-      --color-bg: #121212;
-      --color-text: #e0e0e0;
-      --color-panel-bg: #1e1e1e;
-      --color-border: #333;
-      --color-primary: #3b82f6;
-      --color-accent: #60a5fa;
-      --color-hover: #2c2f45;
-      --shadow-light: rgba(0,0,0,0.8);
-      --scrollbar-bg: #222;
-      --scrollbar-thumb: #555;
-    }
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: var(--font-family);
-      background-color: var(--color-bg);
-      color: var(--color-text);
-      height: 100vh;
-      display: grid;
-      grid-template-rows: 48px 1fr;
-      overflow: hidden;
-      user-select: none;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 12px;
-      height: 12px;
-    }
-    ::-webkit-scrollbar-track {
-      background: var(--scrollbar-bg);
-      border-radius: 6px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background-color: var(--scrollbar-thumb);
-      border-radius: 6px;
-      border: 3px solid var(--scrollbar-bg);
-    }
-    /* Header - toolbar */
-    header[role="banner"] {
-      background-color: var(--color-panel-bg);
-      border-bottom: 1px solid var(--color-border);
-      display: flex;
-      align-items: center;
-      padding: 0 1rem;
-      justify-content: space-between;
-      box-shadow: 0 2px 5px var(--shadow-light);
-      user-select: none;
-      z-index: 100;
-    }
-    header h1 {
-      font-weight: 700;
-      font-size: 1.3rem;
-      letter-spacing: 0.08em;
-      margin: 0;
-      user-select: text;
-      color: var(--color-primary);
-      cursor: default;
-      user-select: none;
-      text-transform: uppercase;
-    }
-    .toolbar-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .toolbar-actions button {
-      all: unset;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.4rem 0.9rem;
-      font-weight: 600;
-      border-radius: 6px;
-      color: var(--color-text);
-      font-size: 0.95rem;
-      transition: background-color var(--transition), color var(--transition), box-shadow var(--transition);
-      user-select: none;
-      position: relative;
-    }
-    .toolbar-actions button i {
-      font-size: 1.1rem;
-    }
-    .toolbar-actions button:hover,
-    .toolbar-actions button:focus-visible {
-      background-color: var(--color-hover);
-      outline-offset: 2px;
-      outline: 2px solid var(--color-accent);
-      box-shadow: 0 0 6px var(--color-accent);
-      color: var(--color-accent);
-    }
-    #btn-theme-toggle {
-      font-size: 1.3rem;
-      padding: 0.3rem 0.5rem;
-    }
-    /* Tooltip base */
-    [data-tooltip] {
-      position: relative;
-      cursor: pointer;
-    }
-    [data-tooltip]::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      white-space: nowrap;
-      padding: 4px 8px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--color-panel-bg);
-      background: var(--color-accent);
-      border-radius: 4px;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(10px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      bottom: 100%;
-      left: 50%;
-      transform-origin: center bottom;
-      z-index: 200;
-      user-select: none;
-      translate: -50% 10px;
-    }
-    [data-tooltip]:hover::after,
-    [data-tooltip]:focus-visible::after {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-    /* Main content grid */
-    main[role="main"] {
-      display: grid;
-      grid-template-columns: 300px 1fr 360px;
-      gap: 0.8rem;
-      padding: 1rem;
-      height: 100%;
-      overflow: hidden;
-      user-select: none;
-    }
-    /* Sidebar general */
-    aside.sidebar,
-    aside.properties {
-      background-color: var(--color-panel-bg);
-      border: 1px solid var(--color-border);
-      border-radius: 10px;
-      box-shadow: 0 4px 10px var(--shadow-light);
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-      overflow-y: auto;
-      user-select: text;
-    }
-    aside.sidebar {
-      user-select: text;
-    }
-    /* Headings */
-    aside.sidebar h2,
-    aside.properties > h2 {
-      font-weight: 700;
-      font-size: 1.25rem;
-      border-bottom: 2px solid var(--color-border);
-      padding-bottom: 0.3rem;
-      margin: 0 0 1rem 0;
-      user-select: text;
-      color: var(--color-primary);
-      letter-spacing: 0.03em;
-    }
-    /* Explorer & Assets Sections */
-    aside.sidebar section {
-      flex-grow: 1;
-      overflow-y: auto;
-      margin-bottom: 1.8rem;
-      user-select: text;
-    }
-    aside.sidebar section:last-child {
-      margin-bottom: 0;
-    }
-    aside.sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    aside.sidebar li {
-      padding: 0.4rem 0.6rem;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      transition: background-color 0.2s ease;
-      user-select: text;
-      font-weight: 600;
-      color: var(--color-text);
-      position: relative;
-    }
-    aside.sidebar li i {
-      color: var(--color-primary);
-      min-width: 20px;
-      text-align: center;
-      font-size: 1.1rem;
-      user-select: none;
-      pointer-events: none;
-    }
-    aside.sidebar li:hover,
-    aside.sidebar li:focus-visible,
-    aside.sidebar li.active {
-      background-color: var(--color-hover);
-      outline: none;
-      color: var(--color-accent);
-      box-shadow: 0 0 8px var(--color-accent);
-      font-weight: 700;
-    }
-    /* Expandable tree style */
-    aside.sidebar ul.tree {
-      padding-left: 1.2rem;
-      user-select: text;
-    }
-    aside.sidebar ul.tree li {
-      padding-left: 0.3rem;
-      position: relative;
-      user-select: text;
-    }
-    aside.sidebar ul.tree li::before {
-      content: "";
-      position: absolute;
-      left: -12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 8px;
-      height: 8px;
-      border: solid var(--color-primary);
-      border-width: 0 2px 2px 0;
-      display: inline-block;
-      padding: 2px;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-      user-select: none;
-      pointer-events: auto;
-    }
-    aside.sidebar ul.tree li.collapsed::before {
-      transform: translateY(-50%) rotate(-45deg);
-    }
-    aside.sidebar ul.tree li.expanded::before {
-      transform: translateY(-50%) rotate(45deg);
-    }
-    /* Viewport */
-    section.viewport {
-      background-color: var(--color-panel-bg);
-      border-radius: 12px;
-      border: 1px solid var(--color-border);
-      box-shadow: 0 8px 16px var(--shadow-light);
-      display: flex;
-      flex-direction: column;
-      padding: 1rem;
-      user-select: none;
-      overflow: hidden;
-      position: relative;
-    }
-    section.viewport h2 {
-      margin: 0;
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: var(--color-primary);
-      user-select: text;
-    }
-    #viewport-container {
-      flex-grow: 1;
-      margin-top: 1rem;
-      background-color: #000;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: inset 0 0 14px rgba(255 255 255 / 0.08);
-      position: relative;
-      min-height: 450px;
-      user-select: none;
-    }
-    /* Properties */
-    aside.properties {
-      user-select: text;
-      box-shadow: 0 8px 20px var(--shadow-light);
-    }
-    form.properties-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-    }
-    form.properties-form label {
-      font-weight: 600;
-      font-size: 1rem;
-      user-select: text;
-    }
-    form.properties-form input[type="text"],
-    form.properties-form input[type="color"] {
-      padding: 0.5rem 0.75rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1.5px solid var(--color-border);
-      background-color: var(--color-bg);
-      color: var(--color-text);
-      transition: border-color var(--transition), box-shadow var(--transition);
-      user-select: text;
-      font-family: var(--font-family);
-      width: 100%;
-      user-select: text;
-    }
-    form.properties-form input[type="text"]:focus,
-    form.properties-form input[type="color"]:focus {
-      outline: none;
-      border-color: var(--color-accent);
-      box-shadow: 0 0 10px var(--color-accent);
-    }
-    /* Script editor container */
-    #script-editor {
-      margin-top: 1.2rem;
-      border-radius: 10px;
-      border: 1.5px solid var(--color-border);
-      min-height: 300px;
-      overflow: hidden;
-      font-family: 'Fira Code', monospace, Consolas, 'Courier New', monospace;
-      user-select: text;
-      box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
-    }
-    /* Accessibility: visually hidden text */
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0,0,0,0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-    /* Buttons in panels */
-    button.action-btn {
-      all: unset;
-      cursor: pointer;
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      user-select: none;
-      transition: background-color 0.25s ease, color 0.25s ease;
-      font-weight: 700;
-      font-size: 0.9rem;
-      background-color: var(--color-primary);
-      color: #fff;
-      box-shadow: 0 2px 6px var(--color-accent);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    button.action-btn i {
-      font-size: 1rem;
-    }
-    button.action-btn:hover,
-    button.action-btn:focus-visible {
-      background-color: var(--color-accent);
-      outline: none;
-      box-shadow: 0 0 12px var(--color-accent);
-    }
-    /* Responsive tweaks */
-    @media (max-width: 1200px) {
-      main[role="main"] {
-        grid-template-columns: 250px 1fr 320px;
-      }
-      aside.sidebar {
-        max-width: 250px;
-      }
-      aside.properties {
-        max-width: 320px;
-      }
-    }
-    @media (max-width: 900px) {
-      main[role="main"] {
-        grid-template-columns: 1fr;
-        grid-template-rows: 300px 1fr 400px;
-        padding: 0.8rem;
-      }
-      aside.sidebar,
-      aside.properties {
-        max-width: 100%;
-        border-radius: 0;
-        box-shadow: none;
-        border: none;
-        padding: 0.5rem;
-        overflow-y: auto;
-      }
-      aside.sidebar {
-        grid-row: 1;
-      }
-      section.viewport {
-        grid-row: 2;
-        border-radius: 0;
-      }
-      aside.properties {
-        grid-row: 3;
-        border-radius: 0;
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orgena Studio - Advanced 3D Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+  body {
+    margin: 0; height: 100vh; overflow: hidden;
+    font-family: 'Fira Code', monospace;
+    background: #121212; color: #eee;
+    display: grid; grid-template-columns: 250px 1fr 350px;
+    grid-template-rows: 40px 1fr;
+    grid-template-areas:
+      "toolbar toolbar toolbar"
+      "explorer viewport properties";
+  }
+  #toolbar {
+    grid-area: toolbar; background: #1e1e1e; display: flex; align-items: center; padding: 0 10px;
+    border-bottom: 1px solid #333;
+  }
+  #toolbar button, #toolbar select {
+    margin-right: 10px; padding: 6px 10px;
+    background: #333; color: #eee; border: none; border-radius: 3px; cursor: pointer;
+  }
+  #toolbar button:hover, #toolbar select:hover {
+    background: #444;
+  }
+  #explorer {
+    grid-area: explorer; background: #1e1e1e; border-right: 1px solid #333;
+    display: flex; flex-direction: column;
+  }
+  #explorer h2 {
+    margin: 10px; font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 5px;
+  }
+  #objectList {
+    flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0;
+  }
+  #objectList li {
+    padding: 8px 12px; cursor: pointer;
+    border-bottom: 1px solid #333;
+  }
+  #objectList li.selected {
+    background: #3a3a3a;
+  }
+  #viewport {
+    grid-area: viewport; position: relative;
+  }
+  canvas {
+    width: 100%; height: 100%; display: block;
+  }
+  #properties {
+    grid-area: properties; background: #1e1e1e; border-left: 1px solid #333;
+    display: flex; flex-direction: column; padding: 10px;
+    color: #eee;
+  }
+  #properties h2 {
+    margin-top: 0; font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 5px;
+  }
+  #properties label {
+    margin-top: 10px; display: block; font-size: 0.9em;
+  }
+  #properties input[type=text], #properties input[type=color], #properties textarea {
+    width: 100%; padding: 6px; margin-top: 4px; background: #333; border: none; border-radius: 3px;
+    color: #eee; font-family: 'Fira Code', monospace; font-size: 0.9em;
+  }
+  #properties textarea {
+    resize: vertical; height: 120px;
+  }
+  #properties button {
+    margin-top: 15px; padding: 8px 12px;
+    background: #333; color: #eee; border: none; border-radius: 3px; cursor: pointer;
+  }
+  #properties button:hover {
+    background: #444;
+  }
+  /* Scrollbar styling */
+  #objectList::-webkit-scrollbar, #properties textarea::-webkit-scrollbar {
+    width: 8px;
+  }
+  #objectList::-webkit-scrollbar-thumb, #properties textarea::-webkit-scrollbar-thumb {
+    background: #555; border-radius: 4px;
+  }
+  /* Tooltip style for gizmo handles */
+  .gizmo-handle {
+    cursor: pointer;
+  }
+</style>
 </head>
-<body data-theme="light" >
-  <header role="banner" aria-label="Orgena Studio main toolbar">
-    <h1 tabindex="0" aria-label="Orgena Studio Logo">Orgena Studio</h1>
-    <nav class="toolbar-actions" role="navigation" aria-label="Toolbar actions">
-      <button
-        id="btn-new-project"
-        class="action-btn"
-        aria-label="Create new project"
-        data-tooltip="Create New Project"
-        title="Create New Project"
-      >
-        <i class="fa-solid fa-file-circle-plus"></i> New
-      </button>
-      <button
-        id="btn-save-project"
-        class="action-btn"
-        aria-label="Save current project"
-        data-tooltip="Save Project"
-        title="Save Project"
-      >
-        <i class="fa-solid fa-floppy-disk"></i> Save
-      </button>
-      <button
-        id="btn-open-project"
-        class="action-btn"
-        aria-label="Open existing project"
-        data-tooltip="Open Project"
-        title="Open Project"
-      >
-        <i class="fa-solid fa-folder-open"></i> Open
-      </button>
-      <button
-        id="btn-theme-toggle"
-        class="action-btn"
-        aria-label="Toggle dark or light mode"
-        title="Toggle Dark/Light Mode"
-      >
-        <i class="fa-solid fa-moon"></i>
-      </button>
-    </nav>
-  </header>
+<body>
 
-  <main role="main" aria-label="Orgena Studio main content area">
-    <!-- Left Sidebar: Explorer + Assets -->
-    <aside class="sidebar" aria-label="Explorer and Assets panel" tabindex="0">
-      <section aria-labelledby="explorer-title" id="explorer-section">
-        <h2 id="explorer-title" tabindex="0">Explorer</h2>
-        <ul role="list" tabindex="0" aria-label="List of project objects" class="tree" id="explorer-list" aria-multiselectable="true" >
-          <li tabindex="0" class="expanded" role="treeitem" aria-expanded="true">
-            <i class="fa-solid fa-cubes"></i> Workspace
-            <ul role="group" class="tree">
-              <li tabindex="0" role="treeitem"><i class="fa-solid fa-code"></i> Script1</li>
-              <li tabindex="0" role="treeitem"><i class="fa-solid fa-tree"></i> Tree</li>
-            </ul>
-          </li>
-        </ul>
-      </section>
+<div id="toolbar" role="toolbar" aria-label="Main toolbar">
+  <button id="btnAddObject">Add Object</button>
+  <select id="primitiveType" aria-label="Select primitive type">
+    <option value="cube">Cube</option>
+    <option value="sphere">Sphere</option>
+    <option value="cylinder">Cylinder</option>
+    <option value="plane">Plane</option>
+  </select>
+  <button id="btnSaveProject">Save Project</button>
+  <button id="btnLoadProject">Load Project</button>
+  <button id="btnToggleMode" aria-pressed="false">Toggle Dark/Light Mode</button>
+</div>
 
-      <section aria-labelledby="assets-title" id="assets-section" style="margin-top: 2rem;">
-        <h2 id="assets-title" tabindex="0">Assets</h2>
-        <ul role="list" tabindex="0" aria-label="List of assets" id="assets-list">
-          <li tabindex="0" class="asset-item"><i class="fa-solid fa-cube"></i> Cube</li>
-          <li tabindex="0" class="asset-item"><i class="fa-solid fa-sphere"></i> Sphere</li>
-          <li tabindex="0" class="asset-item"><i class="fa-solid fa-folder"></i> Models</li>
-        </ul>
-      </section>
-    </aside>
+<div id="explorer" aria-label="Object Explorer">
+  <h2>Explorer</h2>
+  <ul id="objectList" role="listbox" tabindex="0" aria-multiselectable="false"></ul>
+</div>
 
-    <!-- Center: 3D Viewport -->
-    <section class="viewport" aria-label="3D viewport and scene view">
-      <h2 tabindex="0">Scene Viewport</h2>
-      <div
-        id="viewport-container"
-        aria-live="polite"
-        aria-atomic="true"
-        role="region"
-        aria-label="3D scene viewport"
-        tabindex="0"
-        aria-describedby="viewport-desc"
-      >
-        <!-- Three.js canvas will be injected here -->
-        <canvas id="three-canvas" tabindex="-1" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></canvas>
-      </div>
-      <div id="viewport-desc" class="sr-only">
-        The main 3D viewport for scene rendering and interaction.
-      </div>
-    </section>
+<div id="viewport" aria-label="3D Viewport">
+  <!-- Three.js Canvas will be here -->
+</div>
 
-    <!-- Right Sidebar: Properties + Script Editor -->
-    <aside class="properties" aria-label="Properties and scripting panel" tabindex="0">
-      <h2 tabindex="0">Properties</h2>
+<div id="properties" aria-label="Properties and Scripting">
+  <h2>Properties</h2>
+  <label for="propName">Name</label>
+  <input type="text" id="propName" aria-describedby="propNameDesc" />
+  <span id="propNameDesc" class="sr-only">Name of the selected object</span>
 
-      <form class="properties-form" aria-label="Selected object properties" id="properties-form" autocomplete="off">
-        <div>
-          <label for="prop-name">Name</label>
-          <input
-            type="text"
-            id="prop-name"
-            name="prop-name"
-            value="Cube"
-            aria-describedby="prop-name-desc"
-            autocomplete="off"
-            spellcheck="false"
-            required
-            tabindex="0"
-          />
-          <small id="prop-name-desc" class="sr-only">Set the name of the selected object</small>
-        </div>
+  <label for="propPosition">Position (x, y, z)</label>
+  <input type="text" id="propPosition" aria-describedby="propPositionDesc" />
+  <span id="propPositionDesc" class="sr-only">Comma separated position coordinates</span>
 
-        <div>
-          <label for="prop-position">Position (x, y, z)</label>
-          <input
-            type="text"
-            id="prop-position"
-            name="prop-position"
-            value="0, 1, 0"
-            aria-describedby="prop-position-desc"
-            autocomplete="off"
-            spellcheck="false"
-            pattern="^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$"
-            required
-            tabindex="0"
-            title="Enter position as x, y, z (e.g. 0, 1, 0)"
-          />
-          <small id="prop-position-desc" class="sr-only">Set the position coordinates</small>
-        </div>
+  <label for="propRotation">Rotation (x°, y°, z°)</label>
+  <input type="text" id="propRotation" aria-describedby="propRotationDesc" />
+  <span id="propRotationDesc" class="sr-only">Comma separated rotation in degrees</span>
 
-        <div>
-          <label for="prop-color">Color</label>
-          <input
-            type="color"
-            id="prop-color"
-            name="prop-color"
-            value="#ff0000"
-            aria-describedby="prop-color-desc"
-            tabindex="0"
-          />
-          <small id="prop-color-desc" class="sr-only">Set the object color</small>
-        </div>
-      </form>
+  <label for="propScale">Scale (x, y, z)</label>
+  <input type="text" id="propScale" aria-describedby="propScaleDesc" />
+  <span id="propScaleDesc" class="sr-only">Comma separated scale values</span>
 
-      <h2 tabindex="0" style="margin-top: 1.5rem;">Script</h2>
-      <div
-        id="script-editor"
-        role="textbox"
-        aria-multiline="true"
-        aria-label="Script editor"
-        tabindex="0"
-        aria-live="polite"
-        aria-atomic="true"
-        aria-describedby="script-editor-desc"
-      >
-        <!-- Monaco editor will be injected here -->
-      </div>
-      <div id="script-editor-desc" class="sr-only">
-        The script editor allows editing of the Lua script attached to the selected object.
-      </div>
-    </aside>
-  </main>
+  <label for="propColor">Color</label>
+  <input type="color" id="propColor" aria-describedby="propColorDesc" />
 
-  <!-- Dependencies -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>
+  <label for="propScript">Lua Script</label>
+  <textarea id="propScript" aria-describedby="propScriptDesc" spellcheck="false" autocomplete="off" autocorrect="off"></textarea>
+  <span id="propScriptDesc" class="sr-only">Lua scripting code controlling the object</span>
 
-  <script>
-    // Theme toggle button logic
-    (() => {
-      const bodyEl = document.body;
-      const btnTheme = document.getElementById("btn-theme-toggle");
-      const icon = btnTheme.querySelector("i");
-      const storedTheme = localStorage.getItem("orgena-theme");
+  <button id="btnUpdateProperties">Update Properties</button>
+</div>
 
-      if (storedTheme) {
-        bodyEl.setAttribute("data-theme", storedTheme);
-        if (storedTheme === "dark") {
-          icon.classList.replace("fa-moon", "fa-sun");
-        } else {
-          icon.classList.replace("fa-sun", "fa-moon");
-        }
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/controls/TransformControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js"></script>
+
+<script>
+(() => {
+  // Basic setup
+  const container = document.getElementById('viewport');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(70, container.clientWidth/container.clientHeight, 0.1, 1000);
+  camera.position.set(5, 5, 7);
+
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setClearColor(0x121212);
+  renderer.shadowMap.enabled = true;
+  container.appendChild(renderer.domElement);
+
+  // Controls
+  const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+  orbitControls.enableDamping = true;
+
+  // Transform Controls (move/rotate/scale gizmos)
+  const transformControls = new THREE.TransformControls(camera, renderer.domElement);
+  scene.add(transformControls);
+
+  // Grid and Axes helpers
+  const gridHelper = new THREE.GridHelper(20, 20);
+  scene.add(gridHelper);
+  const axesHelper = new THREE.AxesHelper(5);
+  scene.add(axesHelper);
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(5,10,7);
+  directionalLight.castShadow = true;
+  scene.add(directionalLight);
+
+  // Objects store
+  const objects = {};
+  let selectedObjectId = null;
+  let objectIdCounter = 0;
+
+  // UI elements
+  const objectListEl = document.getElementById('objectList');
+  const propName = document.getElementById('propName');
+  const propPosition = document.getElementById('propPosition');
+  const propRotation = document.getElementById('propRotation');
+  const propScale = document.getElementById('propScale');
+  const propColor = document.getElementById('propColor');
+  const propScript = document.getElementById('propScript');
+  const btnAddObject = document.getElementById('btnAddObject');
+  const btnUpdateProperties = document.getElementById('btnUpdateProperties');
+  const btnSaveProject = document.getElementById('btnSaveProject');
+  const btnLoadProject = document.getElementById('btnLoadProject');
+  const primitiveTypeSelector = document.getElementById('primitiveType');
+  const btnToggleMode = document.getElementById('btnToggleMode');
+
+  // Helper functions
+  function generateId() {
+    objectIdCounter++;
+    return `obj_${objectIdCounter}`;
+  }
+
+  // Create primitives helper
+  function createPrimitive(type, color=0x999999) {
+    let geometry;
+    switch(type) {
+      case 'cube':
+        geometry = new THREE.BoxGeometry(1,1,1);
+        break;
+      case 'sphere':
+        geometry = new THREE.SphereGeometry(0.6, 32, 32);
+        break;
+      case 'cylinder':
+        geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32);
+        break;
+      case 'plane':
+        geometry = new THREE.PlaneGeometry(1.2,1.2);
+        break;
+      default:
+        geometry = new THREE.BoxGeometry(1,1,1);
+    }
+    const material = new THREE.MeshStandardMaterial({color});
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  // Add object
+  function addObject(type) {
+    const id = generateId();
+    const mesh = createPrimitive(type, 0x999999);
+    mesh.position.set(0, 0.6, 0);
+    mesh.name = `${type.charAt(0).toUpperCase() + type.slice(1)} ${objectIdCounter}`;
+    scene.add(mesh);
+
+    objects[id] = {
+      id,
+      mesh,
+      type,
+      script: `-- Lua script for ${mesh.name}\nfunction update(dt)\n  -- dt: delta time\nend`
+    };
+    addObjectToExplorer(id);
+    selectObject(id);
+  }
+
+  // Add object to explorer list UI
+  function addObjectToExplorer(id) {
+    const obj = objects[id];
+    const li = document.createElement('li');
+    li.textContent = obj.mesh.name;
+    li.id = id;
+    li.tabIndex = 0;
+    li.setAttribute('role', 'option');
+    li.addEventListener('click', () => selectObject(id));
+    li.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectObject(id);
       }
+    });
+    objectListEl.appendChild(li);
+  }
 
-      btnTheme.addEventListener("click", () => {
-        const isLight = bodyEl.getAttribute("data-theme") === "light";
-        if (isLight) {
-          bodyEl.setAttribute("data-theme", "dark");
-          icon.classList.replace("fa-moon", "fa-sun");
-          localStorage.setItem("orgena-theme", "dark");
-        } else {
-          bodyEl.setAttribute("data-theme", "light");
-          icon.classList.replace("fa-sun", "fa-moon");
-          localStorage.setItem("orgena-theme", "light");
-        }
-      });
-    })();
+  // Refresh explorer list UI
+  function refreshExplorer() {
+    objectListEl.innerHTML = '';
+    Object.keys(objects).forEach(id => addObjectToExplorer(id));
+  }
 
-    // Explorer tree expand/collapse
-    (() => {
-      const explorerList = document.getElementById("explorer-list");
+  // Select object by id
+  function selectObject(id) {
+    if (!objects[id]) return;
+    selectedObjectId = id;
+    for(let li of objectListEl.children) {
+      li.classList.toggle('selected', li.id === id);
+      li.setAttribute('aria-selected', li.id === id ? 'true' : 'false');
+    }
+    const obj = objects[id];
+    // Fill properties inputs
+    propName.value = obj.mesh.name;
+    propPosition.value = `${obj.mesh.position.x.toFixed(2)}, ${obj.mesh.position.y.toFixed(2)}, ${obj.mesh.position.z.toFixed(2)}`;
+    propRotation.value = `${THREE.MathUtils.radToDeg(obj.mesh.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.z).toFixed(1)}`;
+    propScale.value = `${obj.mesh.scale.x.toFixed(2)}, ${obj.mesh.scale.y.toFixed(2)}, ${obj.mesh.scale.z.toFixed(2)}`;
+    propColor.value = "#" + obj.mesh.material.color.getHexString();
+    propScript.value = obj.script;
 
-      explorerList.querySelectorAll("li").forEach((li) => {
-        // If li has children ul, make expandable
-        const childUl = li.querySelector("ul");
-        if (childUl) {
-          li.classList.add("expanded");
-          li.setAttribute("aria-expanded", "true");
-          li.setAttribute("role", "treeitem");
-          childUl.setAttribute("role", "group");
-          li.addEventListener("click", (e) => {
-            if (e.target === li || e.target === li.firstChild || e.target === li.querySelector("i")) {
-              e.stopPropagation();
-              const expanded = li.getAttribute("aria-expanded") === "true";
-              if (expanded) {
-                li.setAttribute("aria-expanded", "false");
-                li.classList.remove("expanded");
-                li.classList.add("collapsed");
-              } else {
-                li.setAttribute("aria-expanded", "true");
-                li.classList.remove("collapsed");
-                li.classList.add("expanded");
-              }
-            }
-          });
-          li.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              li.click();
-            }
-          });
-        } else {
-          li.setAttribute("role", "treeitem");
-          li.setAttribute("aria-expanded", "false");
-        }
-      });
-    })();
+    // Attach transform controls to selected mesh
+    transformControls.attach(obj.mesh);
+  }
 
-    // Monaco editor init for Lua scripting
-    (() => {
-      require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
-      require(['vs/editor/editor.main'], function () {
-        window.editor = monaco.editor.create(document.getElementById('script-editor'), {
-          value: `-- Orgena Studio Lua script\nfunction update()\n  -- Your code here\nend`,
-          language: 'lua',
-          theme: document.body.getAttribute('data-theme') === 'dark' ? 'vs-dark' : 'vs-light',
-          automaticLayout: true,
-          fontSize: 14,
-          fontFamily: "'Fira Code', monospace",
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          smoothScrolling: true,
-          wordWrap: 'on',
-          lineNumbers: 'on',
-          roundedSelection: true,
-          cursorStyle: 'line',
-          cursorBlinking: 'blink',
-          renderIndentGuides: true,
-          tabSize: 2,
-          insertSpaces: true,
-          autoClosingBrackets: 'always',
-          suggestOnTriggerCharacters: true,
-        });
+  // Update selected object's properties from inputs
+  function updateSelectedObject() {
+    if(!selectedObjectId) return;
+    const obj = objects[selectedObjectId];
 
-        // Sync theme changes with Monaco
-        const themeToggleBtn = document.getElementById('btn-theme-toggle');
-        themeToggleBtn.addEventListener('click', () => {
-          setTimeout(() => {
-            const theme = document.body.getAttribute('data-theme');
-            monaco.editor.setTheme(theme === 'dark' ? 'vs-dark' : 'vs-light');
-          }, 150);
-        });
-      });
-    })();
-
-    // Three.js 3D viewport init
-    (() => {
-      const container = document.getElementById("viewport-container");
-      const canvas = document.getElementById("three-canvas");
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-      // Set renderer size & pixel ratio
-      function resize() {
-        const w = container.clientWidth;
-        const h = container.clientHeight;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-        renderer.setPixelRatio(window.devicePixelRatio);
+    // Name
+    const newName = propName.value.trim();
+    if(newName) {
+      obj.mesh.name = newName;
+      // Update explorer list text
+      for(let li of objectListEl.children) {
+        if(li.id === selectedObjectId) li.textContent = newName;
       }
-      window.addEventListener('resize', resize);
-      resize();
+    }
 
-      // Lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(5, 10, 7);
-      directionalLight.castShadow = true;
-      scene.add(directionalLight);
+    // Position
+    const posParts = propPosition.value.split(',').map(s => parseFloat(s.trim()));
+    if(posParts.length === 3 && posParts.every(n => !isNaN(n))) {
+      obj.mesh.position.set(posParts[0], posParts[1], posParts[2]);
+    }
 
-      // Grid helper
-      const grid = new THREE.GridHelper(20, 20, 0x444444, 0x888888);
-      scene.add(grid);
+    // Rotation (degrees to radians)
+    const rotParts = propRotation.value.split(',').map(s => THREE.MathUtils.degToRad(parseFloat(s.trim())));
+    if(rotParts.length === 3 && rotParts.every(n => !isNaN(n))) {
+      obj.mesh.rotation.set(rotParts[0], rotParts[1], rotParts[2]);
+    }
 
-      // Axes helper
-      const axesHelper = new THREE.AxesHelper(5);
-      scene.add(axesHelper);
+    // Scale
+    const scaleParts = propScale.value.split(',').map(s => parseFloat(s.trim()));
+    if(scaleParts.length === 3 && scaleParts.every(n => !isNaN(n))) {
+      obj.mesh.scale.set(scaleParts[0], scaleParts[1], scaleParts[2]);
+    }
 
-      // Objects dictionary for reference
-      const objects = {};
+    // Color
+    try {
+      obj.mesh.material.color.set(propColor.value);
+    } catch(e) {}
 
-      // Create example Cube
-      const geometry = new THREE.BoxGeometry();
-      const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-      const cube = new THREE.Mesh(geometry, material);
-      cube.name = "Cube";
-      cube.position.set(0, 1, 0);
-      cube.castShadow = true;
-      cube.receiveShadow = true;
-      scene.add(cube);
-      objects[cube.name] = cube;
+    // Script
+    obj.script = propScript.value;
 
-      // Animate
-      function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
+  }
+
+  // Save and Load project from localStorage
+  function saveProject() {
+    const data = {
+      objects: Object.values(objects).map(obj => ({
+        id: obj.id,
+        name: obj.mesh.name,
+        type: obj.type,
+        position: obj.mesh.position.toArray(),
+        rotation: [obj.mesh.rotation.x, obj.mesh.rotation.y, obj.mesh.rotation.z],
+        scale: obj.mesh.scale.toArray(),
+        color: "#" + obj.mesh.material.color.getHexString(),
+        script: obj.script,
+      }))
+    };
+    localStorage.setItem('orgena_project', JSON.stringify(data));
+    alert('Project saved locally.');
+  }
+
+  function loadProject() {
+    const dataStr = localStorage.getItem('orgena_project');
+    if(!dataStr) {
+      alert('No saved project found.');
+      return;
+    }
+    try {
+      const data = JSON.parse(dataStr);
+      // Clear existing
+      Object.values(objects).forEach(obj => scene.remove(obj.mesh));
+      Object.keys(objects).forEach(k => delete objects[k]);
+      objectIdCounter = 0;
+      objectListEl.innerHTML = '';
+
+      data.objects.forEach(objData => {
+        const mesh = createPrimitive(objData.type, parseInt(objData.color.slice(1), 16));
+        mesh.position.fromArray(objData.position);
+        mesh.rotation.set(...objData.rotation);
+        mesh.scale.fromArray(objData.scale);
+        mesh.name = objData.name;
+        scene.add(mesh);
+        objects[objData.id] = {
+          id: objData.id,
+          mesh,
+          type: objData.type,
+          script: objData.script,
+        };
+        objectIdCounter = Math.max(objectIdCounter, parseInt(objData.id.split('_')[1]));
+      });
+      refreshExplorer();
+      // Select first object if exists
+      if(Object.keys(objects).length > 0) selectObject(Object.keys(objects)[0]);
+      alert('Project loaded successfully.');
+    } catch(e) {
+      alert('Failed to load project: ' + e.message);
+    }
+  }
+
+  // Lua Scripting Execution (using fengari)
+  function runLuaScript(obj, dt) {
+    if(!obj.script || obj.script.trim() === '') return;
+    try {
+      // Create Lua state
+      const L = fengari.lauxlib.luaL_newstate();
+      fengari.lualib.luaL_openlibs(L);
+      // Load script
+      const luaCode = obj.script + '\nreturn update';
+      fengari.lauxlib.luaL_loadstring(L, fengari.to_luastring(luaCode));
+      fengari.lua.lua_pcall(L, 0, 1, 0);
+      // Get update function
+      if(fengari.lua.lua_isfunction(L, -1)) {
+        fengari.lua.lua_pushnumber(L, dt);
+        fengari.lua.lua_pcall(L, 1, 0, 0);
       }
+      fengari.lua.lua_close(L);
+    } catch(e) {
+      console.warn('Lua script error:', e);
+    }
+  }
 
-      // Initial camera position
-      camera.position.set(5, 5, 5);
-      controls.target.set(0, 1, 0);
-      controls.update();
+  // Animate loop
+  let lastTime = 0;
+  function animate(time=0) {
+    requestAnimationFrame(animate);
+    orbitControls.update();
+    transformControls.update();
 
-      animate();
+    const delta = (time - lastTime)/1000;
+    lastTime = time;
 
-      // Property form binding
-      const form = document.getElementById("properties-form");
-      const inputName = document.getElementById("prop-name");
-      const inputPosition = document.getElementById("prop-position");
-      const inputColor = document.getElementById("prop-color");
+    // Run Lua update scripts
+    Object.values(objects).forEach(obj => runLuaScript(obj, delta));
 
-      function updateObjectFromForm() {
-        const obj = objects[inputName.value] || cube;
-        obj.name = inputName.value;
-        // Parse position
-        const posStr = inputPosition.value.trim();
-        const posMatch = posStr.match(/^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/);
-        if (posMatch) {
-          obj.position.set(parseFloat(posMatch[1]), parseFloat(posMatch[3]), parseFloat(posMatch[5]));
-        }
-        // Update color
-        obj.material.color.set(inputColor.value);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // UI event handlers
+  btnAddObject.onclick = () => {
+    addObject(primitiveTypeSelector.value);
+  };
+  btnUpdateProperties.onclick = () => {
+    updateSelectedObject();
+  };
+  btnSaveProject.onclick = () => {
+    updateSelectedObject();
+    saveProject();
+  };
+  btnLoadProject.onclick = () => {
+    loadProject();
+  };
+
+  // Sync properties with transform controls move
+  transformControls.addEventListener('objectChange', () => {
+    if(!selectedObjectId) return;
+    const obj = objects[selectedObjectId];
+    if(!obj) return;
+
+    // Update inputs based on mesh transforms
+    propPosition.value = `${obj.mesh.position.x.toFixed(2)}, ${obj.mesh.position.y.toFixed(2)}, ${obj.mesh.position.z.toFixed(2)}`;
+    propRotation.value = `${THREE.MathUtils.radToDeg(obj.mesh.rotation.x).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.y).toFixed(1)}, ${THREE.MathUtils.radToDeg(obj.mesh.rotation.z).toFixed(1)}`;
+    propScale.value = `${obj.mesh.scale.x.toFixed(2)}, ${obj.mesh.scale.y.toFixed(2)}, ${obj.mesh.scale.z.toFixed(2)}`;
+  });
+
+  // Select first object on load
+  window.onload = () => {
+    if(objectListEl.children.length > 0) selectObject(objectListEl.children[0].id);
+  };
+
+  // Keyboard nav for explorer (arrow keys)
+  objectListEl.addEventListener('keydown', e => {
+    if(e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const current = document.activeElement;
+      if(current.parentElement !== objectListEl) return;
+      let newIndex;
+      const items = Array.from(objectListEl.children);
+      const currentIndex = items.indexOf(current);
+      if(e.key === 'ArrowDown') {
+        newIndex = (currentIndex + 1) % items.length;
+      } else {
+        newIndex = (currentIndex - 1 + items.length) % items.length;
       }
+      items[newIndex].focus();
+    }
+  });
 
-      form.addEventListener("input", () => {
-        updateObjectFromForm();
-      });
+  // Dark/Light Mode toggle
+  btnToggleMode.onclick = () => {
+    if(document.body.style.background === 'white') {
+      document.body.style.background = '#121212';
+      document.body.style.color = '#eee';
+      renderer.setClearColor(0x121212);
+      btnToggleMode.setAttribute('aria-pressed', 'false');
+    } else {
+      document.body.style.background = 'white';
+      document.body.style.color = '#121212';
+      renderer.setClearColor(0xffffff);
+      btnToggleMode.setAttribute('aria-pressed', 'true');
+    }
+  };
+})();
+</script>
 
-      // Explorer list click to select object and load properties
-      const explorerListEl = document.getElementById("explorer-list");
-      explorerListEl.addEventListener("click", (e) => {
-        let target = e.target;
-        while (target && target.tagName !== 'LI') {
-          target = target.parentElement;
-        }
-        if (target && objects[target.textContent.trim()]) {
-          const obj = objects[target.textContent.trim()];
-          inputName.value = obj.name;
-          inputPosition.value = `${obj.position.x.toFixed(2)}, ${obj.position.y.toFixed(2)}, ${obj.position.z.toFixed(2)}`;
-          inputColor.value = `#${obj.material.color.getHexString()}`;
-          inputName.focus();
-        }
-      });
-
-      // Keyboard accessibility for explorer
-      explorerListEl.addEventListener("keydown", (e) => {
-        const current = document.activeElement;
-        if (current.tagName === "LI") {
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            const next = current.nextElementSibling || current.parentElement.firstElementChild;
-            if (next) next.focus();
-          } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            const prev = current.previousElementSibling || current.parentElement.lastElementChild;
-            if (prev) prev.focus();
-          }
-        }
-      });
-    })();
-
-  </script>
-
-  <!-- FontAwesome CDN for icons -->
-  <script
-    src="https://kit.fontawesome.com/a076d05399.js"
-    crossorigin="anonymous"
-    defer
-  ></script>
 </body>
 </html>
