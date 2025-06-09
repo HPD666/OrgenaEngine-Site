@@ -353,9 +353,9 @@ console.log('Script executed');</textarea>
         const item = document.createElement('div');
         item.className = 'object-item' + (selectedObject && selectedObject.id === obj.id ? ' selected' : '');
         
-  item.textContent = document.getElementById('userInput').value + "#" + obj.id;
+  
       
-     // item.textContent = obj.type + ' #' + obj.id;
+     item.textContent = obj.type + ' #' + obj.id;
         
         item.onclick = () => {
           selectedObject = obj;
