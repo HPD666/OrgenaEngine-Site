@@ -372,6 +372,7 @@ console.log('Script executed');</textarea>
         }
         propDiv.appendChild(div);
       });
+      
       const updateBtn = document.createElement('button');
       updateBtn.textContent = 'Update Properties';
       updateBtn.onclick = () => {
@@ -385,7 +386,7 @@ console.log('Script executed');</textarea>
           selectedObject.radius = parseFloat(document.getElementById('prop-radius').value);
         }
         selectedObject.dynamic = document.getElementById('prop-dynamic').checked;
-      };
+      }; 
       propDiv.appendChild(updateBtn);
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete Object';
