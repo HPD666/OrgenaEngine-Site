@@ -355,7 +355,9 @@ console.log('Script executed');</textarea>
    
       
       item.textContent =  obj.type + ' #' + obj.id;
-        
+        if (newName =! "") {
+          item.textContent = newName + "#" + obj.id;
+        }
         
         item.onclick = () => {
           selectedObject = obj;
