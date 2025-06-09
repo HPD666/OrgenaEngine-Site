@@ -168,7 +168,7 @@
                         <button id="rename-object">Rename Object</button>`;
     </html>
     // Attach event listener after UI elements are created
-    document.getElementById("rename-object").addEventListener("click", () => {
+   /* document.getElementById("rename-object").addEventListener("click", () => {
       let newName = document.getElementById("prop-name").value.trim();
       if (newName) {
         selectedObject.name = newName;
@@ -186,7 +186,7 @@
       list.appendChild(item);
     });
   }
-</script>
+</script> */
 <script>
   function updateExplorer() {
     const list = document.getElementById("explorer-list");
@@ -368,7 +368,26 @@ console.log('Script executed');</textarea>
         list.appendChild(item);
       });
     }
-
+    // Attach event listener after UI elements are created
+    document.getElementById("rename-object").addEventListener("click", () => {
+      let newName = document.getElementById("prop-name").value.trim();
+      if (newName) {
+        selectedObject.name = newName;
+    const list = document.getElementById("explorer-list");
+    list.innerHTML = "";
+    objects.forEach(obj => {
+      const item = document.createElement("div");
+      item.className = "object-item" + (selectedObject && selectedObject.id === obj.id ? " selected" : "");
+      item.textContent = obj.name || obj.type + " #" + obj.id;
+      item.onclick = () => {
+        selectedObject = obj;
+        updateExplorer();
+        updateProperties();
+      };
+      list.appendChild(item);
+    });
+  }
+</script>
     // Properties Panel
     function updateProperties() {
       const propDiv = document.getElementById('properties-content');
